@@ -4,8 +4,8 @@ import styles from './ItemDetailPage.module.css';
 import { Button } from '../components/Button';
 import { LikeButton } from '../components/LikeButton';
 import { useToast } from '../context/ToastContext';
+import { fetchApi } from '../apiClient';
 
-// 商品の型定義
 interface Item {
   id: number;
   title: string;
@@ -15,10 +15,7 @@ interface Item {
   imageUrls: string[];
   createdAt: string;
   updatedAt: string;
-  seller: {
-    id: number;
-    username: string;
-  };
+  seller: { id: number; username: string; };
   likeCount: number;
   isLikedByCurrentUser: boolean;
 }
@@ -43,15 +40,8 @@ export const ItemDetailPage = () => {
     }
     setLoading(true);
     setErrorMessage(null);
-    const token = localStorage.getItem('token');
     try {
-      const response = await fetch(`/api/items/${itemId}`, {
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-      });
-      if (!response.ok) {
-        throw new Error('商品データの取得に失敗しました。');
-      }
-      const data: Item = await response.json();
+      const data = await fetchApi(`/api/items/${itemId}`);
       setItem(data);
     } catch (error) {
       const msg = error instanceof Error ? error.message : '予期せぬエラーが発生しました';
@@ -69,90 +59,38 @@ export const ItemDetailPage = () => {
   const handleDelete = async () => {
     if (!window.confirm('本当にこの商品を削除しますか？')) return;
     setIsProcessing(true);
-    const token = localStorage.getItem('token');
-    if (!token) {
-      showToast('エラー: ログインしていません。', 'error');
-      setIsProcessing(false);
-      return;
-    }
     try {
-      const response = await fetch(`/api/items/${itemId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      if (response.status === 204) {
-        showToast('商品を削除しました。', 'success');
-        navigate('/');
-      } else {
-        const data = await response.json();
-        throw new Error(data.message || '削除に失敗しました。');
-      }
+      await fetchApi(`/api/items/${itemId}`, { method: 'DELETE' });
+      showToast('商品を削除しました。', 'success');
+      navigate('/');
     } catch (error) {
       showToast(`エラー: ${(error as Error).message}`, 'error');
     } finally {
       setIsProcessing(false);
     }
   };
-
-  if (loading) {
-    return <div className={styles.centeredMessage}><p>商品を読み込んでいます...</p></div>;
-  }
-  if (errorMessage) {
-    return <div className={styles.centeredMessage}><p>ページの読み込みに失敗しました。</p></div>;
-  }
-  if (!item) {
-    return <div className={styles.centeredMessage}><p>商品情報が見つかりませんでした。</p></div>;
-  }
+  
+  if (loading) { return <div className={styles.centeredMessage}><p>商品を読み込んでいます...</p></div>; }
+  if (errorMessage) { return <div className={styles.centeredMessage}><p>ページの読み込みに失敗しました。</p></div>; }
+  if (!item) { return <div className={styles.centeredMessage}><p>商品情報が見つかりませんでした。</p></div>; }
 
   const isOwner = loggedInUserId === item.seller.id;
 
   return (
     <div className={styles.pageContainer}>
       <div className={styles.itemContainer}>
-        <div className={styles.imageSection}>
-          <img 
-            src={item.imageUrls && item.imageUrls.length > 0 ? item.imageUrls[0] : ''} 
-            alt={item.title}
-            className={styles.mainImage}
-          />
-        </div>
+        <div className={styles.imageSection}><img src={item.imageUrls && item.imageUrls.length > 0 ? item.imageUrls[0] : ''} alt={item.title} className={styles.mainImage} /></div>
         <div className={styles.infoSection}>
           <h1 className={styles.title}>{item.title}</h1>
           <p className={styles.price}>{item.price.toLocaleString()}円</p>
-          <div className={styles.description}>
-            <p>{item.description}</p>
-          </div>
-          <div className={styles.sellerInfo}>
-            出品者: {item.seller.username}
-          </div>
+          <div className={styles.description}><p>{item.description}</p></div>
+          <div className={styles.sellerInfo}>出品者: {item.seller.username}</div>
           <div className={styles.buttonContainer}>
-            {item.status !== 'available' ? (
-                <Button disabled={true}>売り切れ</Button>
-            ) : isOwner ? (
-                <Button disabled={true}>自分の商品です</Button>
-            ) : loggedInUserId ? (
-                <Link to={`/items/${item.id}/purchase`} style={{flexGrow: 1, textDecoration: 'none'}}>
-                    <Button>購入手続きへ進む</Button>
-                </Link>
-            ) : (
-                <Button onClick={() => navigate('/login')}>ログインして購入</Button>
-            )}
-            <LikeButton 
-                itemId={item.id}
-                initialLiked={item.isLikedByCurrentUser}
-                initialLikeCount={item.likeCount}
-            />
+            {item.status !== 'available' ? (<Button disabled={true}>売り切れ</Button>) : isOwner ? (<Button disabled={true}>自分の商品です</Button>) : loggedInUserId ? (<Link to={`/items/${item.id}/purchase`} style={{flexGrow: 1, textDecoration: 'none'}}><Button>購入手続きへ進む</Button></Link>) : (<Button onClick={() => navigate('/login')}>ログインして購入</Button>)}
+            <LikeButton itemId={item.id} initialLiked={item.isLikedByCurrentUser} initialLikeCount={item.likeCount} />
           </div>
           {isOwner && (
-            <div className={styles.ownerMenu}>
-              <h3>出品者メニュー</h3>
-              <div className={styles.ownerButtons}>
-                <Link to={`/items/${item.id}/edit`}>
-                  <button className={styles.editButton}>編集する</button>
-                </Link>
-                <button onClick={handleDelete} disabled={isProcessing} className={styles.deleteButton}>削除する</button>
-              </div>
-            </div>
+            <div className={styles.ownerMenu}><h3>出品者メニュー</h3><div className={styles.ownerButtons}><Link to={`/items/${item.id}/edit`}><button className={styles.editButton}>編集する</button></Link><button onClick={handleDelete} disabled={isProcessing} className={styles.deleteButton}>削除する</button></div></div>
           )}
         </div>
       </div>

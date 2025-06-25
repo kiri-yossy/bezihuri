@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import styles from './HomePage.module.css';
 import { ItemCard } from '../components/ItemCard';
+import { fetchApi } from '../apiClient'; // 作成したヘルパーをインポート
 
-// 商品の型定義 (共通化が理想)
+// 商品の型定義
 interface Item {
   id: number;
   title: string;
@@ -17,8 +18,8 @@ interface Item {
     id: number;
     username: string;
   };
-  likeCount: number; // ★ いいね数を追加
-  isLikedByCurrentUser: boolean; // ★ ログインユーザーがいいね済みかを追加
+  likeCount: number;
+  isLikedByCurrentUser: boolean;
 }
 
 // APIからのレスポンス全体の型を定義
@@ -29,7 +30,6 @@ interface ItemsApiResponse {
     currentPage: number;
 }
 
-// ★ カテゴリーのリストを定義
 const categories = ["野菜", "果物", "加工品", "その他"];
 
 export const HomePage = () => {
@@ -37,7 +37,7 @@ export const HomePage = () => {
   const [loadingItems, setLoadingItems] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'new' | 'category'>('new');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null); // ★ 選択されたカテゴリーを管理
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   
   const [currentPage, setCurrentPage] = useState(1);
   const location = useLocation();
@@ -47,24 +47,17 @@ export const HomePage = () => {
       setLoadingItems(true);
       setErrorMessage(null);
 
-const token = localStorage.getItem('token');
-      const headers: HeadersInit = {};
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
       let apiUrl = `/api/items?page=${page}&limit=9`;
       if (activeTab === 'category' && selectedCategory) {
         apiUrl = `/api/items/category/${selectedCategory}?page=${page}&limit=9`;
       }
       
       try {
-        const response = await fetch(apiUrl, { headers }); // ★ headersを追加
-        if (!response.ok) {
-          throw new Error('商品データの取得に失敗しました。');
-        }
-        const data: ItemsApiResponse = await response.json();
+        // ★★★ fetch(...) を fetchApi(...) に置き換え ★★★
+        // トークンの添付などはfetchApiが自動で行ってくれます
+        const data = await fetchApi(apiUrl);
         setApiResponse(data);
+        // ★★★★★★★★★★★★★★★★★★★★★★★★★★
       } catch (error) {
         setErrorMessage(error instanceof Error ? error.message : '予期せぬエラーが発生しました。');
       } finally {
@@ -73,7 +66,7 @@ const token = localStorage.getItem('token');
     };
 
     fetchItems(currentPage);
-  }, [currentPage, activeTab, selectedCategory, location.key]); // ★ 依存配列に activeTab と selectedCategory を追加
+  }, [currentPage, activeTab, selectedCategory, location.key]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage > 0 && apiResponse && newPage <= apiResponse.totalPages) {
@@ -84,13 +77,13 @@ const token = localStorage.getItem('token');
 
   const handleTabClick = (tab: 'new' | 'category') => {
     setActiveTab(tab);
-    setSelectedCategory(null); // タブを切り替えたら選択カテゴリーはリセット
-    setCurrentPage(1); // ページも1に戻す
+    setSelectedCategory(null);
+    setCurrentPage(1);
   };
 
   const handleCategoryClick = (category: string) => {
     setSelectedCategory(category);
-    setCurrentPage(1); // ページも1に戻す
+    setCurrentPage(1);
   };
 
 
@@ -128,7 +121,9 @@ const token = localStorage.getItem('token');
             </div>
             {apiResponse.totalPages > 1 && (
               <div className={styles.pagination}>
-                {/* ... ページネーションボタン ... */}
+                <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage <= 1}>前へ</button>
+                <span>ページ {apiResponse.currentPage} / {apiResponse.totalPages}</span>
+                <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage >= apiResponse.totalPages}>次へ</button>
               </div>
             )}
           </>
@@ -139,7 +134,6 @@ const token = localStorage.getItem('token');
 
       {activeTab === 'category' && (
         <div className={styles.categoryContainer}>
-          {/* ★ カテゴリー選択画面 */}
           {!selectedCategory ? (
             <div className={styles.categoryList}>
               <h3>カテゴリーを選択してください</h3>
@@ -154,7 +148,6 @@ const token = localStorage.getItem('token');
               ))}
             </div>
           ) : (
-            // ★ カテゴリー別商品一覧
             <div>
               <h3>「{selectedCategory}」の商品</h3>
               {apiResponse && apiResponse.items.length > 0 ? (
