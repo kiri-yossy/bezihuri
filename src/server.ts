@@ -19,6 +19,13 @@ AppDataSource.initialize()
         app.use(cors());
         app.use(express.json());
 
+        // ★★★ このルートを1行追加 ★★★
+        // Renderのヘルスチェック用
+        app.get("/", (req, res) => {
+            res.send("VegiFuri API is running!");
+        });
+        // ★★★★★★★★★★★★★★★★★
+
         // ルート設定
         app.use('/api/auth', authRoutes);
         app.use('/api/items', itemRoutes);
