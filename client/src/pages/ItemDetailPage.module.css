@@ -1,0 +1,147 @@
+.pageContainer {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 20px;
+}
+
+.itemContainer {
+  display: flex;
+  gap: 30px; /* 画像と情報の間のスペース */
+  background-color: #fff;
+  padding: 30px;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.imageSection {
+  flex: 1; /* 比率を1とする */
+  max-width: 400px;
+}
+
+.mainImage {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1; /* 画像を正方形に保つ */
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid #f0f0f0;
+}
+
+.infoSection {
+  flex: 1; /* 比率を1とする */
+  display: flex;
+  flex-direction: column;
+}
+
+.title {
+  font-size: 1.8em;
+  font-weight: 700;
+  margin: 0 0 10px 0;
+  color: #333;
+}
+
+.price {
+  font-size: 2.2em;
+  font-weight: bold;
+  color: #e74c3c;
+  margin-bottom: 20px;
+}
+
+.description {
+  margin: 20px 0;
+  padding-top: 20px;
+  border-top: 1px solid #f0f0f0;
+  white-space: pre-wrap;
+  line-height: 1.7;
+  color: #555;
+  flex-grow: 1; /* 空きスペースを埋める */
+}
+
+.sellerInfo {
+    margin-top: 20px;
+    padding: 12px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    font-size: 0.9em;
+}
+
+.buttonContainer {
+    margin-top: 20px;
+}
+
+/* 編集・削除ボタン用のスタイル */
+.ownerMenu {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+.ownerMenu h3 {
+    margin: 0 0 10px 0;
+    font-size: 1em;
+    color: #555;
+}
+.ownerButtons {
+    display: flex;
+    gap: 10px;
+}
+.editButton, .deleteButton {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 500;
+}
+.editButton {
+    background-color: #f0f0f0;
+    color: #333;
+}
+.deleteButton {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.backLink {
+  display: block;
+  text-align: center;
+  margin-top: 30px;
+  color: #007bff;
+}
+
+.centeredMessage {
+  text-align: center;
+  padding: 50px 0;
+  color: #777;
+}
+/* ★★★ ここからメディアクエリを追記 ★★★ */
+
+/* 画面幅が768px以下の場合に適用されるスタイル */
+@media screen and (max-width: 768px) {
+  .pageContainer {
+    /* スマホではページの左右の余白をなくす */
+    padding: 0;
+  }
+
+  .itemContainer {
+    /* ★ 横並びから縦積みに変更 */
+    flex-direction: column; 
+    
+    /* スマホでは角丸や影をなくし、スッキリさせる */
+    border-radius: 0;
+    box-shadow: none;
+    padding: 20px;
+  }
+  
+  .imageSection {
+    /* 横幅の最大値制限を解除 */
+    max-width: 100%;
+  }
+}
+.buttonContainer {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+.buttonContainer > *:first-child {
+    flex-grow: 1;
+}

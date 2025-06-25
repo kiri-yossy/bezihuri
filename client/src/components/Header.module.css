@@ -1,0 +1,173 @@
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 32px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #f0f0f0;
+  position: sticky;
+  top: 0;
+  z-index: 990;
+  height: 64px;
+  box-sizing: border-box;
+}
+
+.logoContainer {
+  font-size: 1.8em;
+  font-weight: 700;
+  color: #2ecc71; /* ニンジン色 */
+  flex-shrink: 0;
+}
+
+.logoContainer a {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+}
+
+.searchContainer {
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+  padding: 0 40px;
+}
+
+.searchInput {
+  width: 100%;
+  max-width: 450px;
+  padding: 10px 20px;
+  border: 1px solid #e0e0e0;
+  border-radius: 20px;
+  font-size: 1em;
+  font-family: inherit; /* フォントを継承 */
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.searchInput:focus {
+  border-color: #2ecc71;
+  box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.2);
+}
+
+.navContainer {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-shrink: 0;
+}
+
+.navLink {
+  text-decoration: none;
+  color: #555;
+  font-weight: 500;
+  font-size: 1em;
+  transition: color 0.2s;
+}
+
+.navLink:hover {
+  color: #2ecc71;
+}
+
+.logoutButton {
+  background: none;
+  border: none;
+  color: #555;
+  font-weight: 500;
+  font-size: 1em;
+  font-family: inherit;
+  cursor: pointer;
+  transition: color 0.2s;
+  padding: 0;
+}
+
+.logoutButton:hover {
+  color: #2ecc71;
+}
+
+.hamburgerMenu {
+  display: none;
+  flex-direction: column;
+  justify-content: space-around;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: 1002;
+}
+
+.hamburgerLine {
+  width: 24px;
+  height: 3px;
+  background-color: #555;
+  border-radius: 2px;
+}
+
+.menuOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 998;
+}
+
+.mobileMenu {
+  position: fixed;
+  top: 0;
+  right: -100%;
+  width: 100%;
+  max-width: 280px;
+  height: 100vh;
+  background-color: #ffffff;
+  box-shadow: -4px 0px 15px rgba(0, 0, 0, 0.1);
+  transition: right 0.3s ease-in-out;
+  padding: 80px 20px 20px 20px;
+  box-sizing: border-box;
+  z-index: 999;
+}
+
+.menuOpen {
+  right: 0;
+}
+
+.mobileNavLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mobileNavLink {
+  display: block;
+  width: 100%;
+  padding: 15px;
+  font-size: 1.2em;
+  text-align: left;
+  background: none;
+  border: none;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  color: #333;
+}
+
+.mobileNavLink:last-child {
+  border-bottom: none;
+}
+
+@media screen and (max-width: 768px) {
+  .header {
+    padding: 12px 16px;
+  }
+
+  .searchContainer,
+  .navContainer {
+    display: none;
+  }
+  
+  .hamburgerMenu {
+    display: flex;
+  }
+}

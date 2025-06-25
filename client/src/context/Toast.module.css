@@ -1,0 +1,40 @@
+.toast {
+  position: fixed;
+  top: 80px; /* ヘッダーの下あたり */
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 24px;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 2000; /* 最前面に表示 */
+  animation: fadeInOut 4s ease-in-out forwards;
+}
+
+.success {
+  background-color: #2ecc71; /* 成功の緑 */
+}
+
+.error {
+  background-color: #e74c3c; /* エラーの赤 */
+}
+
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+    top: 60px;
+  }
+  10% {
+    opacity: 1;
+    top: 80px;
+  }
+  90% {
+    opacity: 1;
+    top: 80px;
+  }
+  100% {
+    opacity: 0;
+    top: 60px;
+  }
+}

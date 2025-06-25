@@ -1,0 +1,19 @@
+/* /client/src/components/TextArea.module.css */
+.commonTextArea {
+  width: 100%;
+  padding: 14px 20px;
+  font-size: 1em;
+  border: 2px solid #e0e0e0;
+  border-radius: 16px; /* 少し角を残す */
+  box-sizing: border-box;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 120px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.commonTextArea:focus {
+    outline: none;
+    border-color: #2ecc71;
+    box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.2);
+}

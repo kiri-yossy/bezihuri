@@ -1,0 +1,28 @@
+/* /client/src/components/Button.module.css */
+.commonButton {
+  width: 100%;
+  padding: 14px 20px;
+  font-size: 1.1em;
+  font-weight: 700; /* 少し太くする */
+  color: #333;
+  background-color: #fff;
+  border: 2px solid #e0e0e0; /* 少し濃いめのボーダー */
+  border-radius: 30px; /* 角を丸くする */
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 1px; /* 文字間を少し広げる */
+}
+
+.commonButton:hover:not(:disabled) {
+  background-color: #f7f7f7;
+  border-color: #ccc;
+  transform: translateY(-2px); /* 少し浮き上がる */
+  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+}
+
+.commonButton:disabled {
+  background-color: #f0f0f0;
+  color: #aaa;
+  cursor: not-allowed;
+  border-color: #e0e0e0;
+}

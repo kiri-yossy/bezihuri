@@ -1,0 +1,118 @@
+.pageContainer {
+  max-width: 1060px;
+  margin: 40px auto;
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+  padding: 0 20px;
+}
+
+.profileSection {
+  flex: 0 0 300px;
+  padding: 30px;
+  background-color: #fff;
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  text-align: center;
+  position: sticky;
+  top: 100px; /* ヘッダーの高さ(64px) + 余白 */
+}
+
+.profileIconPlaceholder {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background-color: #f0f0f0;
+  margin: 0 auto 20px auto;
+  border: 4px solid #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  /* TODO: 実際のアイコン画像を表示するためのスタイル */
+}
+
+.username {
+  font-size: 1.6em;
+  font-weight: 700;
+  margin: 0 0 10px 0;
+  color: #333;
+}
+
+.bio {
+  font-size: 0.95em;
+  color: #666;
+  margin-bottom: 24px;
+  line-height: 1.6;
+  min-height: 40px; /* 自己紹介文がなくても高さを確保 */
+  white-space: pre-wrap; /* 改行を反映 */
+}
+
+.contentSection {
+  flex-grow: 1;
+  background-color: #fff;
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  padding: 10px 30px 30px 30px;
+  min-height: 500px; /* コンテンツが少なくても高さを確保 */
+}
+
+.tabNav {
+  display: flex;
+  border-bottom: 2px solid #f0f0f0;
+  margin-bottom: 24px;
+}
+
+.tab, .activeTab {
+  padding: 16px 24px;
+  font-size: 1.1em;
+  font-weight: 500;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #888;
+  border-bottom: 2px solid transparent; /* 非アクティブ時の下線 */
+  transition: all 0.2s ease;
+}
+
+.tab:hover {
+    color: #333;
+}
+
+.activeTab {
+  color: #2ecc71;
+  border-bottom: 2px solid #2ecc71;
+  font-weight: 700;
+}
+
+.tabContent {
+  padding-top: 10px;
+}
+
+.itemList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.centeredMessage {
+    text-align: center;
+    padding: 50px 0;
+    color: #777;
+}
+
+/* レスポンシブ対応 */
+@media screen and (max-width: 920px) { /* 2カラムを維持する幅を調整 */
+  .pageContainer {
+    flex-direction: column; 
+    gap: 30px;
+    margin-top: 20px;
+  }
+  .profileSection {
+    width: 100%;
+    position: static; /* スマホでは追従しない */
+    order: -1; /* プロフィールを一番上に */
+    box-sizing: border-box;
+  }
+  .contentSection {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}

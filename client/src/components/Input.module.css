@@ -1,0 +1,17 @@
+/* /client/src/components/Input.module.css */
+.commonInput {
+  width: 100%;
+  padding: 14px 20px; /* パディングを少し調整 */
+  font-size: 1em;
+  border: 2px solid #e0e0e0; /* ボーダーを少し太く */
+  border-radius: 30px; /* 角を丸くする */
+  box-sizing: border-box;
+  font-family: inherit; /* bodyのフォントを継承 */
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.commonInput:focus {
+  outline: none;
+  border-color: #2ecc71; /* フォーカス時の色を緑に */
+  box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.2);
+}

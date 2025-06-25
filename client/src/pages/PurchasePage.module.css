@@ -1,0 +1,78 @@
+.pageContainer {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 60px 20px;
+}
+
+.purchaseCard {
+  width: 100%;
+  max-width: 500px;
+  padding: 40px;
+  background: #ffffff;
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid #f0f0f0;
+}
+
+.purchaseCard h2 {
+  text-align: center;
+  margin: 0 0 30px 0;
+  font-weight: 700;
+  color: #333;
+}
+
+.itemInfo {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.itemImage {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.itemDetails {
+  flex-grow: 1;
+}
+
+.itemTitle {
+  font-size: 1.1em;
+  font-weight: 500;
+  margin: 0 0 8px 0;
+}
+
+.itemPrice {
+  font-size: 1.3em;
+  font-weight: bold;
+}
+
+.summary {
+  margin: 24px 0;
+  padding: 24px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1.2em;
+  font-weight: bold;
+}
+
+.buttonGroup {
+  margin-top: 30px;
+  display: flex;
+  gap: 15px;
+}
+
+.cancelButton {
+    background-color: #f0f0f0 !important;
+    color: #333 !important;
+    border-color: #f0f0f0 !important;
+}

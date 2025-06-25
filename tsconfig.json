@@ -1,0 +1,19 @@
+// tsconfig.json
+{
+    "compilerOptions": {
+      "target": "ES2020",                // 出力する JS のバージョン
+      "module": "commonjs",              // Node.js 向け
+      "outDir": "./dist",                // ビルド先
+      "rootDir": "./src",                // ソース親ディレクトリ
+      "strict": true,                    // 厳格チェック ON
+      "moduleResolution": "node",
+      "esModuleInterop": true,           // import / require の互換
+      "allowSyntheticDefaultImports": true,
+      "forceConsistentCasingInFileNames": true,
+      "skipLibCheck": true,
+      "experimentalDecorators": true,    // TypeORM 用
+      "emitDecoratorMetadata": true      // TypeORM 用
+    },
+    "include": ["src/**/*"],
+    "exclude": ["node_modules", "dist"]
+  }

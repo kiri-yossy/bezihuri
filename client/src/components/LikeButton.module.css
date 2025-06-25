@@ -1,0 +1,28 @@
+.likeButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  background-color: #f7f7f7;
+  color: #555;
+  font-size: 1em;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.likeButton:hover {
+  background-color: #e0e0e0;
+}
+
+.likeButton.liked {
+  background-color: #fce4ec; /* いいねした時の背景色 */
+  color: #e91e63; /* いいねした時の文字色 */
+  border-color: #f8bbd0;
+}
+
+.likeCount {
+    min-width: 12px;
+}

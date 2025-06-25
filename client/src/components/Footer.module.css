@@ -1,0 +1,41 @@
+.footer {
+  background-color: #f8f9fa;
+  border-top: 1px solid #e0e0e0;
+  padding: 30px 40px;
+  margin-top: auto; /* ★スティッキーフッターの核となる部分 */
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.footerContent {
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.logo {
+  font-size: 1.4em;
+  font-weight: 700;
+  color: #2ecc71;
+  margin-bottom: 16px;
+}
+
+.links {
+  margin-bottom: 16px;
+}
+
+.link {
+  margin: 0 15px;
+  color: #555;
+  text-decoration: none;
+  font-size: 0.9em;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.copyright {
+  font-size: 0.8em;
+  color: #888;
+}
