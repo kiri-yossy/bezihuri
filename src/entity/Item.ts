@@ -1,4 +1,4 @@
-// /src/entity/Item.ts (エラー修正版)
+// /src/entity/Item.ts (wanakanaを一時的に無効化するデバッグ版)
 
 import {
   Entity,
@@ -14,7 +14,7 @@ import {
 import { User } from "./User";
 import { Like } from "./Like";
 import { Comment } from "./Comment";
-// import * as wanakana from 'wanakana'; // ★ この行を削除します
+// import * as wanakana from 'wanakana'; // ★ wanakanaのインポートを一時的に削除
 
 export enum ItemStatus {
   AVAILABLE = "available",
@@ -65,14 +65,13 @@ export class Item {
   @Column('text', { select: false, default: '' })
   searchText!: string;
 
-  // ★★★ この関数を async に変更 ★★★
+  // ★★★ この関数の中身を、wanakanaを使わないシンプルなものに一時的に変更 ★★★
   @BeforeInsert()
   @BeforeUpdate()
-  async setSearchText() {
-    // ★ wanakana を動的にインポートするように変更
-    const wanakana = await import('wanakana');
+  setSearchText() {
+    // ひらがな変換の代わりに、単純に小文字に変換するロジックに変更
     const combinedText = `${this.title} ${this.description}`;
-    this.searchText = wanakana.toHiragana(combinedText);
+    this.searchText = combinedText.toLowerCase();
   }
 
   @CreateDateColumn({ name: "created_at" })
