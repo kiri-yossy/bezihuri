@@ -8,7 +8,6 @@ import itemRoutes from './routes/Items';
 import userRoutes from './routes/userRoutes';
 import likeRoutes from './routes/likeRoutes';
 import reservationRoutes from './routes/reservationRoutes'; // orderRoutesから変更
-import { initializeEmail } from './utils/email';
 import commentRoutes from './routes/commentRoutes';
 import chatRoutes from './routes/chatRoutes';
 import reviewRoutes from './routes/reviewRoutes';
@@ -23,8 +22,6 @@ AppDataSource.initialize()
         // メール機能の初期化
         // プロキシ環境でない場合は、これが原因の可能性は低いですが、念のためtry-catchで囲みます
         try {
-            await initializeEmail();
-            console.log("✅ Email service has been initialized!");
         } catch (emailError) {
             console.error("❌ Failed to initialize email service. Continuing without it.", emailError);
         }
