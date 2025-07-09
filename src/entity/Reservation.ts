@@ -24,7 +24,7 @@ export class Reservation {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ManyToOne(() => User, (user) => user.Reservations, { onDelete: "SET NULL" })
+  @ManyToOne(() => User, (user) => user.reservations, { onDelete: "SET NULL" })
   buyer!: User;
 
   @ManyToOne(() => Item, { onDelete: "SET NULL" })
