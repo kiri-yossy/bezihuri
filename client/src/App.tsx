@@ -24,8 +24,11 @@ const PrivacyPolicyPage = () => <div style={{padding: '20px'}}><h2>プライバ�
 
 function AppContent() {
   const [token, setToken] = useState<string | null>(null);
+  
+  // ★★★ この行の直前にコメントを追加 ★★★
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [loggedInUserId, setLoggedInUserId] = useState<number | null>(null);
+  const [_loggedInUserId, setLoggedInUserId] = useState<number | null>(null);
+  
   const navigate = useNavigate();
   const { showToast } = useToast();
 
@@ -81,11 +84,11 @@ function AppContent() {
           <Route path="/mypage" element={token ? <MyPage /> : <LoginPage onLoginSuccess={handleLoginSuccess} />} />
           <Route path="/mypage/edit" element={token ? <ProfileEditPage /> : <LoginPage onLoginSuccess={handleLoginSuccess} />} />
           <Route path="/reservations/:reservationId/review" element={token ? <ReviewPage /> : <LoginPage onLoginSuccess={handleLoginSuccess} />} />
+          <Route path="/users/:userId" element={<UserProfilePage />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/check-email" element={<CheckEmailPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
-          <Route path="/users/:userId" element={<UserProfilePage />} />
         </Routes>
       </main>
       <Footer />
