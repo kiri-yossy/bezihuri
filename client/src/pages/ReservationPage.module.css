@@ -76,3 +76,19 @@
     color: #333 !important;
     border-color: #f0f0f0 !important;
 }
+
+.itemImagePlaceholder {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  background-color: #f0f0f0;
+  flex-shrink: 0; /* 縮まないように */
+}
+/* 既存の .itemImage スタイルも確認 */
+.itemImage {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+}

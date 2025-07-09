@@ -1,21 +1,21 @@
+// /src/config/ormconfig.ts
+
 import { DataSource } from "typeorm";
 import * as dotenv from 'dotenv';
-import { User } from "../entity/User";
-import { Item } from "../entity/Item";
-import path from 'path';
 
-dotenv.config({ path: path.resolve(__dirname, '..', '..', '.env') });
+// .envファイルを読み込む
+dotenv.config();
 
 export const AppDataSource = new DataSource({
     type: "postgres",
     host: process.env.DB_HOST,
     port: Number(process.env.DB_PORT),
-    username: process.env.DB_USER,      // ★ あなたの.envに合わせて DB_USER を使用
-    password: process.env.DB_PASS,      // ★ あなたの.envに合わせて DB_PASS を使用
-    database: process.env.DB_NAME,      // ★ あなたの.envに合わせて DB_NAME を使用
-    synchronize: true,
-    logging: true,
-    entities: [__dirname + '/../entity/*.ts', __dirname + '/../entity/*.js'],
+    username: process.env.DB_USER, // あなたの.envファイルに合わせています
+    password: process.env.DB_PASS, // あなたの.envファイルに合わせています
+    database: process.env.DB_NAME, // あなたの.envファイルに合わせています
+    synchronize: true, // 開発中はtrue
+    logging: true,     // 実行されるSQLをコンソールに表示
+    entities: ["src/entity/**/*.ts"], // ★エンティティファイルをこのパターンで検出
     migrations: [],
     subscribers: [],
 });

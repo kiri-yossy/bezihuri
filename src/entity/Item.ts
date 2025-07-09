@@ -14,9 +14,12 @@ import {
 import { User } from "./User";
 import * as wanakana from 'wanakana'; // ★ wanakanaをインポート
 import { Like } from "./Like";
+import { Comment } from "./Comment";
 
 export enum ItemStatus {
   AVAILABLE = "available",
+  PENDING_RESERVATION = "pending_reservation",
+  RESERVED = "reserved",
   SOLD_OUT = "sold_out",
 }
 
@@ -50,6 +53,9 @@ export class Item {
 
   @OneToMany(() => Like, (like) => like.item)
   likes!: Like[];
+
+  @OneToMany(() => Comment, (comment: Comment) => comment.item)
+  comments!: Comment[];
 
 
   @Column("simple-array", { default: "" })

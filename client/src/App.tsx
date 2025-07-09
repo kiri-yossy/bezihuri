@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
-import styles from './App.module.css'; // ★App用のCSSをインポート
+import styles from './App.module.css';
 import { Header } from './components/Header';
-import { Footer } from './components/Footer';   // ★Footerをインポート
+import { Footer } from './components/Footer';
 import { ToastProvider, useToast } from './context/ToastContext';
 import { HomePage } from './pages/HomePage';
 import { ItemDetailPage } from './pages/ItemDetailPage';
@@ -13,16 +13,19 @@ import { EditItemPage } from './pages/EditItemPage';
 import { MyPage } from './pages/MyPage';
 import { SearchPage } from './pages/SearchPage';
 import { ProfileEditPage } from './pages/ProfileEditPage';
-import { PurchasePage } from './pages/PurchasePage';
+import { ReservationPage } from './pages/ReservationPage';
+import { VerifyEmailPage } from './pages/VerifyEmailPage';
+import { CheckEmailPage } from './pages/CheckEmailPage';
+import { ReviewPage } from './pages/ReviewPage';
+import { UserProfilePage } from './pages/UserProfilePage';
 
-// 静的ページ用の仮コンポーネント
 const TermsPage = () => <div style={{padding: '20px'}}><h2>利用規約</h2><p>ここに利用規約の内容が入ります。</p></div>;
 const PrivacyPolicyPage = () => <div style={{padding: '20px'}}><h2>プライバシーポリシー</h2><p>ここにプライバシーポリシーの内容が入ります。</p></div>;
 
 function AppContent() {
   const [token, setToken] = useState<string | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [_loggedInUserId, setLoggedInUserId] = useState<number | null>(null);
+  const [loggedInUserId, setLoggedInUserId] = useState<number | null>(null);
   const navigate = useNavigate();
   const { showToast } = useToast();
 
@@ -54,8 +57,7 @@ function AppContent() {
   };
 
   const handleRegisterSuccess = () => {
-    showToast('ユーザー登録が成功しました！ログインしてください。', 'success');
-    navigate('/login');
+    navigate('/check-email');
   };
 
   const handleItemCreated = async () => {
@@ -66,24 +68,26 @@ function AppContent() {
   return (
     <div className={styles.appContainer}>
       <Header token={token} handleLogout={handleLogout} />
-
       <main className={styles.mainContent}>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/items/:itemId" element={<ItemDetailPage />} />
           <Route path="/items/:itemId/edit" element={token ? <EditItemPage /> : <LoginPage onLoginSuccess={handleLoginSuccess} />} />
+          <Route path="/items/:itemId/reserve" element={token ? <ReservationPage /> : <LoginPage onLoginSuccess={handleLoginSuccess} />} />
           <Route path="/register" element={<RegisterPage onRegisterSuccess={handleRegisterSuccess} />} />
           <Route path="/login" element={<LoginPage onLoginSuccess={handleLoginSuccess} />} />
           <Route path="/create-item" element={token ? <CreateItemPage onItemCreated={handleItemCreated} /> : <LoginPage onLoginSuccess={handleLoginSuccess} />} />
           <Route path="/mypage" element={token ? <MyPage /> : <LoginPage onLoginSuccess={handleLoginSuccess} />} />
           <Route path="/mypage/edit" element={token ? <ProfileEditPage /> : <LoginPage onLoginSuccess={handleLoginSuccess} />} />
+          <Route path="/reservations/:reservationId/review" element={token ? <ReviewPage /> : <LoginPage onLoginSuccess={handleLoginSuccess} />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
+          <Route path="/check-email" element={<CheckEmailPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
-          <Route path="/items/:itemId/purchase" element={token ? <PurchasePage /> : <LoginPage onLoginSuccess={handleLoginSuccess} />} />
+          <Route path="/users/:userId" element={<UserProfilePage />} />
         </Routes>
       </main>
-
       <Footer />
     </div>
   );

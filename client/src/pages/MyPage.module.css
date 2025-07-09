@@ -116,3 +116,83 @@
     box-sizing: border-box;
   }
 }
+
+.requestList {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.requestItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+}
+
+.requestInfo p {
+  margin: 0 0 8px 0;
+}
+.requestInfo p:last-child {
+  margin-bottom: 0;
+}
+
+.requestActions {
+  display: flex;
+  gap: 10px;
+}
+
+.approveButton, .rejectButton {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+
+.approveButton {
+  background-color: #2ecc71;
+  color: white;
+}
+.rejectButton {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.approveButton:hover, .rejectButton:hover {
+  opacity: 0.8;
+}
+
+.reviewItem {
+  border-bottom: 1px solid #f0f0f0;
+  padding: 15px 0;
+}
+.reviewItem:last-child {
+  border-bottom: none;
+}
+.reviewItem p {
+  margin: 0 0 8px 0;
+}
+.reviewItem small {
+  color: #888;
+}
+.itemsHeader {
+  font-size: 1.4em;
+  font-weight: 700;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 12px;
+  margin: 40px 0 24px 0;
+}
+.followStats {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 15px;
+  color: #555;
+}
+.followButtonContainer {
+  margin-bottom: 20px;
+}

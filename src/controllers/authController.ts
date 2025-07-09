@@ -1,81 +1,121 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { AppDataSource } from '../config/ormconfig';
 import { User } from '../entity/User';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import { sendVerificationEmail } from '../utils/email';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-default-secret';
 
-// ユーザー登録
-export const register = async (req: Request, res: Response): Promise<void> => { // ★戻り値の型を明示
-  try {
-    const { username, email, password } = req.body;
+export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const { username, email, password } = req.body;
 
-    if (!username || !email || !password) {
-      res.status(400).json({ message: '必須項目が不足しています。' });
-      return; // ★早期リターンの場合は return; を残す
+        if (!username || !email || !password) {
+            res.status(400).json({ message: '必須項目が不足しています。' });
+            return;
+        }
+
+        const userRepository = AppDataSource.getRepository(User);
+        const existingUser = await userRepository.findOne({ where: { email } });
+        if (existingUser) {
+            res.status(400).json({ message: 'このメールアドレスは既に使用されています。' });
+            return;
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const verificationToken = crypto.randomBytes(32).toString('hex');
+
+        const user = new User();
+        user.username = username;
+        user.email = email;
+        user.password = hashedPassword;
+        user.isVerified = false;
+        user.verificationToken = verificationToken;
+
+        const newUser = await userRepository.save(user);
+
+        try {
+            await sendVerificationEmail(newUser.email, verificationToken);
+            console.log(`Verification email sent to ${newUser.email}`);
+        } catch (emailError) {
+            console.error("Failed to send verification email:", emailError);
+        }
+        
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { password: _, verificationToken: __, ...userWithoutSensitiveData } = newUser;
+        res.status(201).json(userWithoutSensitiveData);
+
+    } catch (err) {
+        console.error('Registration error:', err);
+        next(err);
     }
-
-    const userRepository = AppDataSource.getRepository(User);
-
-    const existingUser = await userRepository.findOne({ where: { email } });
-    if (existingUser) {
-      res.status(400).json({ message: 'このメールアドレスは既に使用されています。' });
-      return; // ★早期リターンの場合は return; を残す
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const user = new User();
-    user.username = username;
-    user.email = email;
-    user.password = hashedPassword;
-
-    await userRepository.save(user);
-
-    const { password: _, ...userWithoutPassword } = user;
-    res.status(201).json(userWithoutPassword); // ★return を削除
-
-  } catch (error: any) {
-    console.error('Registration error:', error);
-    res.status(500).json({ message: 'サーバーエラーが発生しました。' }); // ★return を削除
-  }
 };
 
-// ユーザーログイン
-export const login = async (req: Request, res: Response): Promise<void> => { // ★戻り値の型を明示
-  try {
-    const { email, password } = req.body;
+export const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) {
+            res.status(400).json({ message: 'メールアドレスとパスワードを入力してください。' });
+            return;
+        }
+        const userRepository = AppDataSource.getRepository(User);
+        const user = await userRepository.findOne({ where: { email } });
+        if (!user) {
+            res.status(401).json({ message: 'メールアドレスまたはパスワードが正しくありません。' });
+            return;
+        }
+        
+        if (!user.isVerified) {
+            res.status(403).json({ message: 'メールアドレスが認証されていません。メールボックスを確認してください。' });
+            return;
+        }
 
-    if (!email || !password) {
-      res.status(400).json({ message: 'メールアドレスとパスワードを入力してください。' });
-      return; // ★早期リターンの場合は return; を残す
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            res.status(401).json({ message: 'メールアドレスまたはパスワードが正しくありません。' });
+            return;
+        }
+        const token = jwt.sign(
+            { userId: user.id, username: user.username, role: user.role },
+            JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+        res.json({ token, userId: user.id, username: user.username });
+    } catch (err) {
+        console.error('Login error:', err);
+        next(err);
     }
+};
 
-    const userRepository = AppDataSource.getRepository(User);
-    const user = await userRepository.findOne({ where: { email } });
+// ★★★ メールアドレス認証を完了させる関数を追加 ★★★
+export const verifyEmail = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const { token } = req.body;
 
-    if (!user) {
-      res.status(401).json({ message: 'メールアドレスまたはパスワードが正しくありません。' });
-      return; // ★早期リターンの場合は return; を残す
+        if (!token) {
+            res.status(400).json({ message: "認証トークンが必要です。" });
+            return;
+        }
+
+        const userRepository = AppDataSource.getRepository(User);
+        const user = await userRepository.findOneBy({ verificationToken: token });
+
+        if (!user) {
+            res.status(404).json({ message: "無効な認証トークンです。ユーザーが見つかりません。" });
+            return;
+        }
+
+        // 認証フラグを立て、トークンを無効化（削除）する
+        user.isVerified = true;
+        user.verificationToken = null; // 一度使ったトークンは無効にする
+        await userRepository.save(user);
+
+        res.json({ message: "メールアドレスの認証が完了しました！ログインしてください。" });
+
+    } catch (err) {
+        console.error('Error in verifyEmail:', err);
+        next(err);
     }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      res.status(401).json({ message: 'メールアドレスまたはパスワードが正しくありません。' });
-      return; // ★早期リターンの場合は return; を残す
-    }
-
-    const token = jwt.sign(
-      { userId: user.id, username: user.username, role: user.role },
-      JWT_SECRET,
-      { expiresIn: '1h' }
-    );
-
-    res.json({ token, userId: user.id, username: user.username }); // ★return を削除
-
-  } catch (error: any) {
-    console.error('Login error:', error);
-    res.status(500).json({ message: 'サーバーエラーが発生しました。' }); // ★return を削除
-  }
 };

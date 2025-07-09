@@ -5,6 +5,7 @@ import { Button } from '../components/Button';
 import { LikeButton } from '../components/LikeButton';
 import { useToast } from '../context/ToastContext';
 import { fetchApi } from '../apiClient';
+import { CommentSection } from '../components/CommentSection';
 
 interface Item {
   id: number;
@@ -79,18 +80,63 @@ export const ItemDetailPage = () => {
   return (
     <div className={styles.pageContainer}>
       <div className={styles.itemContainer}>
-        <div className={styles.imageSection}><img src={item.imageUrls && item.imageUrls.length > 0 ? item.imageUrls[0] : ''} alt={item.title} className={styles.mainImage} /></div>
+        <div className={styles.imageSection}>
+          {item.imageUrls && item.imageUrls.length > 0 ? (
+            item.imageUrls.map((url, index) => (
+              <img 
+                key={index} 
+                src={url} 
+                alt={`${item.title} - 画像${index + 1}`} 
+                className={styles.mainImage}
+              />
+            ))
+          ) : (
+            <div className={styles.noImagePlaceholder}>
+              <span>画像はありません</span>
+            </div>
+          )}
+        </div>
+        <div className={styles.commentSectionWrapper}>
+        <CommentSection itemId={item.id} />
+      </div>
         <div className={styles.infoSection}>
           <h1 className={styles.title}>{item.title}</h1>
           <p className={styles.price}>{item.price.toLocaleString()}円</p>
           <div className={styles.description}><p>{item.description}</p></div>
-          <div className={styles.sellerInfo}>出品者: {item.seller.username}</div>
+          <div className={styles.sellerInfo}>出品者: <Link to={`/users/${item.seller.id}`}>{item.seller.username}</Link></div>
+          
           <div className={styles.buttonContainer}>
-            {item.status !== 'available' ? (<Button disabled={true}>売り切れ</Button>) : isOwner ? (<Button disabled={true}>自分の商品です</Button>) : loggedInUserId ? (<Link to={`/items/${item.id}/purchase`} style={{flexGrow: 1, textDecoration: 'none'}}><Button>購入手続きへ進む</Button></Link>) : (<Button onClick={() => navigate('/login')}>ログインして購入</Button>)}
-            <LikeButton itemId={item.id} initialLiked={item.isLikedByCurrentUser} initialLikeCount={item.likeCount} />
+            {item.status === 'sold_out' ? (
+                <Button disabled={true}>受け渡し完了</Button>
+            ) : item.status === 'reserved' ? (
+                <Button disabled={true}>予約済み</Button>
+            ) : isOwner ? (
+                <Button disabled={true}>自分の商品です</Button>
+            ) : loggedInUserId ? (
+                <Link to={`/items/${item.id}/reserve`} style={{flexGrow: 1, textDecoration: 'none'}}>
+                    <Button>この商品を予約する</Button>
+                </Link>
+            ) : (
+                <Button onClick={() => navigate('/login')}>ログインして予約</Button>
+            )}
+            {/* ★★★ いいねボタンをここに戻します ★★★ */}
+            <LikeButton 
+                itemId={item.id}
+                initialLiked={item.isLikedByCurrentUser}
+                initialLikeCount={item.likeCount}
+            />
           </div>
+          
           {isOwner && (
-            <div className={styles.ownerMenu}><h3>出品者メニュー</h3><div className={styles.ownerButtons}><Link to={`/items/${item.id}/edit`}><button className={styles.editButton}>編集する</button></Link><button onClick={handleDelete} disabled={isProcessing} className={styles.deleteButton}>削除する</button></div></div>
+            <div className={styles.ownerMenu}>
+              <h3>出品者メニュー</h3>
+              <div className={styles.ownerButtons}>
+                <Link to={`/items/${item.id}/edit`}>
+                  <button className={styles.editButton}>編集する</button>
+                </Link>
+                <button onClick={handleDelete} disabled={isProcessing} className={styles.deleteButton}>削除する</button>
+              </div>
+            </div>
           )}
         </div>
       </div>

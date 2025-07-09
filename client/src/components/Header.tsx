@@ -66,6 +66,7 @@ export const Header: React.FC<HeaderProps> = ({ token, handleLogout }) => {
             <>
               <Link to="/create-item" className={styles.navLink}>出品</Link>
               <Link to="/mypage" className={styles.navLink}>マイページ</Link>
+              <Link to="/conversations" className={styles.navLink}>メッセージ</Link> {/* ★追加 */}
               <button onClick={handleLogout} className={styles.logoutButton}>ログアウト</button>
             </>
           ) : (
@@ -97,6 +98,7 @@ export const Header: React.FC<HeaderProps> = ({ token, handleLogout }) => {
               {/* ★★★ ここにonClickを追加 ★★★ */}
               <button onClick={() => handleMobileLinkClick('/create-item')} className={styles.mobileNavLink}>出品</button>
               <button onClick={() => handleMobileLinkClick('/mypage')} className={styles.mobileNavLink}>マイページ</button>
+              <button onClick={() => handleMobileLinkClick('/conversations')} className={styles.mobileNavLink}>メッセージ</button> {/* ★追加 */}
               <button onClick={handleMobileLogoutClick} className={styles.mobileNavLink}>ログアウト</button>
             </>
           ) : (

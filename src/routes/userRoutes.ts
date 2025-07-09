@@ -1,21 +1,24 @@
-import { Router, RequestHandler } from "express"; // ★ RequestHandler をインポート
-import { authMiddleware } from "../middleware/auth";
-import { getMyItems , updateMyProfile, getMyProfile, getMyPurchases } from "../controllers/userController";
+import { Router, RequestHandler } from "express";
+import { authMiddleware, softAuthMiddleware } from "../middleware/auth";
+import { 
+    getMyItems, 
+    updateMyProfile, 
+    getMyProfile, 
+    getMyReservations,
+    getMyLikedItems,
+    getUserProfile
+} from "../controllers/userController";
 
 const router = Router();
 
-// ★★★ GET /api/users/me - ログイン中のユーザーのプロフィール情報を取得 ★★★
+// ★★★ ログイン中のユーザー専用ルート (具体的なパスを先に) ★★★
 router.get("/me", authMiddleware as RequestHandler, getMyProfile as RequestHandler);
-
-// GET /api/users/me/items - ログイン中のユーザーが出品した商品一覧を取得
-// ★★★ authMiddleware と getMyItems を RequestHandlerとしてキャスト ★★★
-router.get("/me/items", authMiddleware as RequestHandler, getMyItems as RequestHandler);
-
-// ★★★ PUT /api/users/me - ログイン中のユーザーのプロフィールを更新 ★★★
 router.put("/me", authMiddleware as RequestHandler, updateMyProfile as RequestHandler);
+router.get("/me/items", authMiddleware as RequestHandler, getMyItems as RequestHandler);
+router.get("/me/reservations", authMiddleware as RequestHandler, getMyReservations as RequestHandler);
+router.get("/me/likes", authMiddleware as RequestHandler, getMyLikedItems as RequestHandler);
 
-// ★★★ GET /api/users/me/purchases - ログイン中のユーザーが購入した商品一覧を取得 ★★★
-router.get("/me/purchases", authMiddleware as RequestHandler, getMyPurchases as RequestHandler);
-
+// ★★★ 他のユーザーの公開プロフィール取得ルート (動的なパスを後に) ★★★
+router.get("/:userId", softAuthMiddleware as RequestHandler, getUserProfile as RequestHandler);
 
 export default router;

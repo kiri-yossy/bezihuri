@@ -1,37 +1,64 @@
-import express from 'express';
+// /src/server.ts
+
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-// ★ { } を使った名前付きインポートで、ormconfig.tsと対応させる
-import { AppDataSource } from './config/ormconfig'; 
+import { AppDataSource } from './config/ormconfig';
 import authRoutes from './routes/auth';
 import itemRoutes from './routes/Items';
 import userRoutes from './routes/userRoutes';
 import likeRoutes from './routes/likeRoutes';
-import orderRoutes from './routes/orderRoutes';
+import reservationRoutes from './routes/reservationRoutes'; // orderRoutesから変更
+import { initializeEmail } from './utils/email';
+import commentRoutes from './routes/commentRoutes';
+import chatRoutes from './routes/chatRoutes';
+import reviewRoutes from './routes/reviewRoutes';
+import followRoutes from './routes/followRoutes';
+import adminRoutes from './routes/adminRoutes';
 
 // AppDataSourceの初期化
 AppDataSource.initialize()
-    .then(() => {
+    .then(async () => {
         console.log("✅ Data Source has been initialized!");
 
-        // Expressアプリのセットアップは .then() の中で行う
-        const app = express();
+        // メール機能の初期化
+        // プロキシ環境でない場合は、これが原因の可能性は低いですが、念のためtry-catchで囲みます
+        try {
+            await initializeEmail();
+            console.log("✅ Email service has been initialized!");
+        } catch (emailError) {
+            console.error("❌ Failed to initialize email service. Continuing without it.", emailError);
+        }
 
+        const app = express();
         app.use(cors());
         app.use(express.json());
 
-        // ★★★ このルートを1行追加 ★★★
-        // Renderのヘルスチェック用
+        // ヘルスチェック用ルート
         app.get("/", (req, res) => {
             res.send("VegiFuri API is running!");
         });
-        // ★★★★★★★★★★★★★★★★★
 
-        // ルート設定
+        // APIルート設定
         app.use('/api/auth', authRoutes);
         app.use('/api/items', itemRoutes);
         app.use('/api/users', userRoutes);
         app.use('/api/items', likeRoutes);
-        app.use('/api/orders', orderRoutes);
+        app.use('/api', reservationRoutes);
+        app.use('/api/items', commentRoutes);
+        app.use('/api/conversations', chatRoutes);
+        app.use('/api', reviewRoutes);
+        app.use('/api', followRoutes);
+        app.use('/api/admin', adminRoutes);
+
+        // ★★★ グローバルなエラーハンドリングミドルウェアを追加 ★★★
+        // これが全てのコントローラーのエラーを最終的にキャッチします
+        app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+            console.error("🔥🔥🔥 Global Error Handler Caught:", err);
+            res.status(500).json({
+                message: "サーバー内部で予期せぬエラーが発生しました。",
+                error: err.message, // 開発中はエラーメッセージを返す
+            });
+        });
 
         const port = process.env.PORT || 3000;
         app.listen(port, () => {
@@ -39,6 +66,5 @@ AppDataSource.initialize()
         });
     })
     .catch((err) => {
-        // データベース接続に失敗した場合のエラー
         console.error("❌ Error during Data Source initialization:", err);
     });

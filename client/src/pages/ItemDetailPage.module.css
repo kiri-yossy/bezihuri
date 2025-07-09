@@ -145,3 +145,31 @@
 .buttonContainer > *:first-child {
     flex-grow: 1;
 }
+.commentSectionWrapper {
+  margin-top: 40px;
+  background-color: #fff;
+  padding: 30px;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.noImagePlaceholder {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background-color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #aaa;
+  border-radius: 12px;
+  border: 1px solid #eee;
+}
+.mainImage { /* 既存のスタイルに追記・修正 */
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid #f0f0f0;
+  margin-bottom: 10px; /* 複数画像表示のために追加 */
+}
