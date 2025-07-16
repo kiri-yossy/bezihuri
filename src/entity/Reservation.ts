@@ -9,14 +9,14 @@ import {
 import { User } from "./User";
 import { Item } from "./Item";
 import { Review } from "./Review";
+import { Conversation } from "./Conversation"; // ★ Conversationをインポート
 
-// 予約の状態を定義
 export enum ReservationStatus {
-  PENDING_APPROVAL = "pending_approval", // 承認待ち
-  RESERVED = "reserved",                 // 予約確定
-  COMPLETED = "completed",               // 受け取り完了
-  CANCELLED = "cancelled",               // キャンセル済み
-  REJECTED = "rejected",                 // ★★★ この行を追加 ★★★
+  PENDING_APPROVAL = "pending_approval",
+  RESERVED = "reserved",
+  COMPLETED = "completed",
+  CANCELLED = "cancelled",
+  REJECTED = "rejected",
 }
 
 @Entity({ name: "reservations" })
@@ -45,4 +45,8 @@ export class Reservation {
 
   @OneToOne(() => Review, (review) => review.reservation)
   review!: Review;
+
+  // ★★★ このプロパティを追加 ★★★
+  @OneToOne(() => Conversation, (conversation) => conversation.reservation)
+  conversation!: Conversation;
 }

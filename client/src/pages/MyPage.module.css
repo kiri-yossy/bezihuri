@@ -196,3 +196,36 @@
 .followButtonContainer {
   margin-bottom: 20px;
 }
+/* レスポンシブ対応 */
+@media screen and (max-width: 920px) {
+  .pageContainer {
+    flex-direction: column; 
+    gap: 30px;
+    margin-top: 20px;
+  }
+  .profileSection {
+    width: 100%;
+    position: static;
+    order: -1;
+    box-sizing: border-box;
+  }
+  .contentSection {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+/* ★★★ スマホでタブが多い場合のためのスタイルを追加 ★★★ */
+@media screen and (max-width: 480px) {
+    .tabNav {
+        overflow-x: auto; /* タブがはみ出たら横スクロールできるように */
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
+    }
+    .tabNav::-webkit-scrollbar {
+        display: none; /* Chrome, Safari, Opera */
+    }
+    .tab, .activeTab {
+        white-space: nowrap; /* タブの文字が改行されないように */
+    }
+}

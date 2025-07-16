@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'; // Reactを削除
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import styles from './MyPage.module.css';
 import { ItemCard } from '../components/ItemCard';
@@ -6,7 +6,7 @@ import { Button } from '../components/Button';
 import { fetchApi } from '../apiClient';
 import { useToast } from '../context/ToastContext';
 
-// ★★★ 型定義を修正 ★★★
+// 型定義
 interface Item {
   id: number;
   title: string;
@@ -14,9 +14,10 @@ interface Item {
   imageUrls: string[];
   likeCount: number;
   isLikedByCurrentUser: boolean;
-  status?: string; // ★ status をオプショナルで追加
+  status?: string;
   reservationId?: number;
   reservationStatus?: string;
+  conversationId?: number;
 }
 interface UserProfile {
     username: string;
@@ -29,17 +30,45 @@ interface ReservationRequest {
     item: { id: number; title: string; };
     buyer: { id: number; username: string; };
 }
-type TabType = 'listed' | 'reserved' | 'requests';
+type TabType = 'listed' | 'reserved' | 'requests' | 'likes';
 
 export const MyPage = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [items, setItems] = useState<{ listed: Item[]; reserved: Item[] }>({ listed: [], reserved: [] });
+  const [items, setItems] = useState<{ listed: Item[]; reserved: Item[]; liked: Item[] }>({ listed: [], reserved: [], liked: [] });
   const [requests, setRequests] = useState<ReservationRequest[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('listed');
   const { showToast } = useToast();
   const navigate = useNavigate();
+
+  const fetchDataForTab = async (tab: TabType) => {
+    setLoading(true);
+    setError(null);
+    try {
+        let apiUrl = '';
+        if (tab === 'listed') apiUrl = '/api/users/me/items';
+        else if (tab === 'reserved') apiUrl = '/api/users/me/reservations';
+        else if (tab === 'requests') apiUrl = '/api/reservations/requests';
+        else if (tab === 'likes') apiUrl = '/api/users/me/likes';
+
+        if (!apiUrl) return;
+
+        const data = await fetchApi(apiUrl);
+        
+        if (tab === 'requests') {
+            setRequests(data);
+        } else {
+            setItems(prev => ({ ...prev, [tab]: data }));
+        }
+    } catch (err) {
+        const msg = err instanceof Error ? err.message : 'データの取得に失敗しました。';
+        setError(msg);
+        showToast(msg, 'error');
+    } finally {
+        setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -56,30 +85,13 @@ export const MyPage = () => {
     fetchInitialData();
   }, []);
 
-  const handleTabClick = async (tab: TabType) => {
+  const handleTabClick = (tab: TabType) => {
     setActiveTab(tab);
-    if ((tab === 'reserved' && items.reserved.length === 0) || (tab === 'requests' && requests.length === 0)) {
-      setLoading(true);
-      setError(null);
-      try {
-          let apiUrl = '';
-          if (tab === 'reserved') apiUrl = '/api/users/me/reservations';
-          else if (tab === 'requests') apiUrl = '/api/reservations/requests';
-
-          const data = await fetchApi(apiUrl);
-          
-          if (tab === 'requests') {
-              setRequests(data);
-          } else {
-              setItems(prev => ({ ...prev, [tab]: data }));
-          }
-      } catch (err) {
-          const msg = err instanceof Error ? err.message : 'データの取得に失敗しました。';
-          setError(msg);
-          showToast(msg, 'error');
-      } finally {
-          setLoading(false);
-      }
+    const isDataMissing = (tab === 'reserved' && items.reserved.length === 0) ||
+                          (tab === 'requests' && requests.length === 0) ||
+                          (tab === 'likes' && items.liked.length === 0);
+    if (isDataMissing) {
+      fetchDataForTab(tab);
     }
   };
   
@@ -99,7 +111,8 @@ export const MyPage = () => {
     try {
         await fetchApi(`/api/reservations/${reservationId}/complete`, { method: 'PUT' });
         showToast('取引を完了しました。購入者を評価しましょう。', 'success');
-        handleTabClick('listed'); // データを再取得してUIを更新
+        fetchDataForTab('listed');
+        fetchDataForTab('reserved');
     } catch (err) {
         showToast(err instanceof Error ? err.message : '操作に失敗しました。', 'error');
     }
@@ -122,6 +135,7 @@ export const MyPage = () => {
             <button className={activeTab === 'listed' ? styles.activeTab : styles.tab} onClick={() => handleTabClick('listed')}>出品した商品</button>
             <button className={activeTab === 'reserved' ? styles.activeTab : styles.tab} onClick={() => handleTabClick('reserved')}>予約した商品</button>
             <button className={activeTab === 'requests' ? styles.activeTab : styles.tab} onClick={() => handleTabClick('requests')}>届いた予約リクエスト</button>
+            <button className={activeTab === 'likes' ? styles.activeTab : styles.tab} onClick={() => handleTabClick('likes')}>いいね！一覧</button>
         </div>
 
         <div className={styles.tabContent}>
@@ -149,7 +163,7 @@ export const MyPage = () => {
                             <div key={item.id} className={styles.transactionItem}>
                                 <ItemCard item={item} />
                                 <div className={styles.transactionActions}>
-                                    {item.reservationStatus === 'reserved' && (<Button onClick={() => navigate(`/chat/${item.reservationId}`)}>出品者と連絡</Button>)}
+                                    {item.reservationStatus === 'reserved' && (<Button onClick={() => navigate(`/chat/${item.conversationId}`)}>出品者と連絡</Button>)}
                                     {item.reservationStatus === 'completed' && (<Link to={`/reservations/${item.reservationId}/review`}><Button className={styles.reviewButton}>出品者を評価する</Button></Link>)}
                                 </div>
                             </div>
@@ -175,6 +189,17 @@ export const MyPage = () => {
                         ))}
                     </div>
                 ) : (<p>現在、新しい予約リクエストはありません。</p>)
+            )}
+            {!loading && activeTab === 'likes' && (
+                items.liked.length > 0 ? (
+                    <div className={styles.itemList}>
+                        {items.liked.map(item => (
+                        <ItemCard key={item.id} item={item} />
+                        ))}
+                    </div>
+                ) : (
+                    <p>まだ「いいね！」した商品はありません。</p>
+                )
             )}
         </div>
       </div>

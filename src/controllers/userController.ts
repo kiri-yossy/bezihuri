@@ -5,9 +5,10 @@ import { Item } from '../entity/Item';
 import { Reservation } from '../entity/Reservation';
 import { Like } from '../entity/Like';
 import { Follow } from '../entity/Follow';
+import { Review } from '../entity/Review';
 import { AuthRequest } from '../middleware/auth';
 
-// ログイン中のユーザー自身のプロフィール情報を取得
+// 自分のプロフィール情報を取得
 export const getMyProfile = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
         const currentUser = req.user as User;
@@ -15,7 +16,6 @@ export const getMyProfile = async (req: AuthRequest, res: Response, next: NextFu
             res.status(401).json({ message: "認証されていません。" });
             return;
         }
-        // パスワードは返さない
         const { password, ...userWithoutPassword } = currentUser;
         res.json(userWithoutPassword);
     } catch (err) {
@@ -23,7 +23,7 @@ export const getMyProfile = async (req: AuthRequest, res: Response, next: NextFu
     }
 };
 
-// ログイン中のユーザーのプロフィールを更新
+// プロフィール更新
 export const updateMyProfile = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
         const { username, bio } = req.body;
@@ -44,7 +44,7 @@ export const updateMyProfile = async (req: AuthRequest, res: Response, next: Nex
     }
 };
 
-// ログイン中のユーザーが出品した商品一覧を取得
+// ★★★ ログイン中のユーザーが出品した商品を取得 (修正版) ★★★
 export const getMyItems = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
         const currentUser = req.user as User;
@@ -53,19 +53,39 @@ export const getMyItems = async (req: AuthRequest, res: Response, next: NextFunc
             return;
         }
         const itemRepository = AppDataSource.getRepository(Item);
+        const reservationRepo = AppDataSource.getRepository(Reservation);
+
         const items = await itemRepository.find({
             where: { seller: { id: currentUser.id } },
             order: { createdAt: "DESC" },
             relations: ["seller", "likes", "likes.user"],
         });
-        const itemsToSend = items.map(item => {
+
+        // 予約・売却済みの商品に対応する予約IDを追加
+        const itemsWithData = await Promise.all(items.map(async (item) => {
+            let reservationId: number | undefined = undefined;
+            if (item.status === 'reserved' || item.status === 'sold_out') {
+                const reservation = await reservationRepo.findOne({
+                    where: { item: { id: item.id } },
+                    select: ['id']
+                });
+                reservationId = reservation?.id;
+            }
             const likeCount = item.likes.length;
             const isLikedByCurrentUser = item.likes.some(like => like.user.id === currentUser.id);
-            const { likes, seller, ...restOfItem } = item;
-            return { ...restOfItem, likeCount, isLikedByCurrentUser, seller: { id: seller.id, username: seller.username } };
-        });
-        res.json(itemsToSend);
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { likes, ...restOfItem } = item;
+            return { 
+                ...restOfItem, 
+                likeCount, 
+                isLikedByCurrentUser,
+                reservationId // ★ 予約IDを追加
+            };
+        }));
+
+        res.json(itemsWithData);
     } catch (err) {
+        console.error('Error in getMyItems:', err);
         next(err);
     }
 };
@@ -81,19 +101,28 @@ export const getMyReservations = async (req: AuthRequest, res: Response, next: N
         const reservationRepository = AppDataSource.getRepository(Reservation);
         const reservations = await reservationRepository.find({
             where: { buyer: { id: currentUser.id } },
-            relations: ["item", "item.seller", "item.likes", "item.likes.user"],
+            relations: ["item", "item.seller", "item.likes", "item.likes.user", "conversation"],
             order: { createdAt: "DESC" },
         });
+
         const reservedItems = reservations.map(reservation => {
             if (reservation.item) {
                 const item = reservation.item;
                 const likeCount = item.likes.length;
                 const isLikedByCurrentUser = item.likes.some(like => like.user.id === currentUser.id);
-                const { likes, seller, ...restOfItem } = item;
-                return { ...restOfItem, likeCount, isLikedByCurrentUser, seller: { id: seller.id, username: seller.username }, reservationId: reservation.id, reservationStatus: reservation.status };
+                const { likes, ...restOfItem } = item;
+                return {
+                    ...restOfItem,
+                    likeCount,
+                    isLikedByCurrentUser,
+                    reservationId: reservation.id,
+                    reservationStatus: reservation.status,
+                    conversationId: reservation.conversation?.id,
+                };
             }
             return null;
         }).filter(item => item !== null);
+
         res.json(reservedItems);
     } catch (err) {
         next(err);
@@ -130,28 +159,24 @@ export const getMyLikedItems = async (req: AuthRequest, res: Response, next: Nex
     }
 };
 
-// ★★★ 特定ユーザーの公開プロフィール情報を取得 (ここに統合) ★★★
+// 特定ユーザーの公開プロフィール情報を取得
 export const getUserProfile = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
         const userId = parseInt(req.params.userId, 10);
-        const currentUser = req.user; // ログインしていればユーザー情報、していなければundefined
-
+        const currentUser = req.user;
         if (isNaN(userId)) {
             res.status(400).json({ message: "無効なユーザーIDです。" });
             return;
         }
-
         const userRepository = AppDataSource.getRepository(User);
         const user = await userRepository.findOne({
             where: { id: userId },
             relations: ["followers", "following"],
         });
-
         if (!user) {
             res.status(404).json({ message: "ユーザーが見つかりません。" });
             return;
         }
-
         let isFollowing = false;
         if (currentUser) {
             const followRepository = AppDataSource.getRepository(Follow);
@@ -161,10 +186,7 @@ export const getUserProfile = async (req: AuthRequest, res: Response, next: Next
             });
             if (follow) isFollowing = true;
         }
-
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { password, email, verificationToken, ...publicProfile } = user;
-        
         res.json({
             ...publicProfile,
             followersCount: user.followers.length,
