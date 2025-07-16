@@ -1,12 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import styles from './ItemDetailPage.module.css';
 import { Button } from '../components/Button';
 import { LikeButton } from '../components/LikeButton';
 import { useToast } from '../context/ToastContext';
 import { fetchApi } from '../apiClient';
-import { CommentSection } from '../components/CommentSection';
 
+// 型定義
 interface Item {
   id: number;
   title: string;
@@ -30,17 +30,10 @@ export const ItemDetailPage = () => {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const loggedInUserIdString = localStorage.getItem('userId');
-  const loggedInUserId = loggedInUserIdString ? parseInt(loggedInUserIdString, 10) : null;
+  const loggedInUserId = Number(localStorage.getItem('userId'));
 
   const fetchItemDetail = useCallback(async () => {
-    if (!itemId) {
-        setLoading(false);
-        setErrorMessage("商品IDが指定されていません。");
-        return;
-    }
     setLoading(true);
-    setErrorMessage(null);
     try {
       const data = await fetchApi(`/api/items/${itemId}`);
       setItem(data);
@@ -48,10 +41,11 @@ export const ItemDetailPage = () => {
       const msg = error instanceof Error ? error.message : '予期せぬエラーが発生しました';
       setErrorMessage(msg);
       showToast(msg, 'error');
+      navigate('/');
     } finally {
       setLoading(false);
     }
-  }, [itemId, showToast]);
+  }, [itemId, showToast, navigate]);
 
   useEffect(() => {
     fetchItemDetail();
@@ -59,7 +53,7 @@ export const ItemDetailPage = () => {
 
   const handleDelete = async () => {
     if (!window.confirm('本当にこの商品を削除しますか？')) return;
-    setIsProcessing(true);
+    setIsProcessing(true); // ★ ここで isProcessing を true に設定
     try {
       await fetchApi(`/api/items/${itemId}`, { method: 'DELETE' });
       showToast('商品を削除しました。', 'success');
@@ -67,13 +61,13 @@ export const ItemDetailPage = () => {
     } catch (error) {
       showToast(`エラー: ${(error as Error).message}`, 'error');
     } finally {
-      setIsProcessing(false);
+      setIsProcessing(false); // ★ ここで isProcessing を false に戻す
     }
   };
   
-  if (loading) { return <div className={styles.centeredMessage}><p>商品を読み込んでいます...</p></div>; }
-  if (errorMessage) { return <div className={styles.centeredMessage}><p>ページの読み込みに失敗しました。</p></div>; }
-  if (!item) { return <div className={styles.centeredMessage}><p>商品情報が見つかりませんでした。</p></div>; }
+  if (loading) { return <p className={styles.centeredMessage}>商品を読み込んでいます...</p>; }
+  if (errorMessage) { return <p className={styles.centeredMessage} style={{ color: 'red' }}>エラー: {errorMessage}</p>; }
+  if (!item) { return <p className={styles.centeredMessage}>商品情報が見つかりませんでした。</p>; }
 
   const isOwner = loggedInUserId === item.seller.id;
 
@@ -82,65 +76,54 @@ export const ItemDetailPage = () => {
       <div className={styles.itemContainer}>
         <div className={styles.imageSection}>
           {item.imageUrls && item.imageUrls.length > 0 ? (
-            item.imageUrls.map((url, index) => (
-              <img 
-                key={index} 
-                src={url} 
-                alt={`${item.title} - 画像${index + 1}`} 
-                className={styles.mainImage}
-              />
-            ))
+            <img src={item.imageUrls[0]} alt={item.title} className={styles.mainImage} />
           ) : (
-            <div className={styles.noImagePlaceholder}>
-              <span>画像はありません</span>
-            </div>
+            <div className={styles.noImagePlaceholder}>画像なし</div>
           )}
         </div>
-        <div className={styles.commentSectionWrapper}>
-        <CommentSection itemId={item.id} />
-      </div>
         <div className={styles.infoSection}>
+          <div className={styles.sellerInfo}>
+            <div className={styles.sellerIcon}></div>
+            <Link to={`/users/${item.seller.id}`} className={styles.sellerName}>{item.seller.username}</Link>
+          </div>
           <h1 className={styles.title}>{item.title}</h1>
-          <p className={styles.price}>{item.price.toLocaleString()}円</p>
-          <div className={styles.description}><p>{item.description}</p></div>
-          <div className={styles.sellerInfo}>出品者: <Link to={`/users/${item.seller.id}`}>{item.seller.username}</Link></div>
-          
-          <div className={styles.buttonContainer}>
-            {item.status === 'sold_out' ? (
-                <Button disabled={true}>受け渡し完了</Button>
-            ) : item.status === 'reserved' ? (
-                <Button disabled={true}>予約済み</Button>
+          <p className={styles.price}>¥{item.price.toLocaleString()}</p>
+          <div className={styles.actions}>
+            <LikeButton 
+              itemId={item.id}
+              initialLiked={item.isLikedByCurrentUser}
+              initialLikeCount={item.likeCount}
+            />
+            <button className={styles.commentButton}>💬 コメント</button>
+          </div>
+          <div className={styles.reserveButtonContainer}>
+            {item.status !== 'available' ? (
+                <Button disabled={true}>{item.status === 'reserved' ? '予約済み' : '受け渡し完了'}</Button>
             ) : isOwner ? (
                 <Button disabled={true}>自分の商品です</Button>
             ) : loggedInUserId ? (
-                <Link to={`/items/${item.id}/reserve`} style={{flexGrow: 1, textDecoration: 'none'}}>
+                <Link to={`/items/${item.id}/reserve`} style={{textDecoration: 'none', width: '100%'}}>
                     <Button>この商品を予約する</Button>
                 </Link>
             ) : (
                 <Button onClick={() => navigate('/login')}>ログインして予約</Button>
             )}
-            {/* ★★★ いいねボタンをここに戻します ★★★ */}
-            <LikeButton 
-                itemId={item.id}
-                initialLiked={item.isLikedByCurrentUser}
-                initialLikeCount={item.likeCount}
-            />
           </div>
-          
+          <div className={styles.description}>
+            <h3>商品の説明</h3>
+            <p>{item.description}</p>
+          </div>
           {isOwner && (
             <div className={styles.ownerMenu}>
-              <h3>出品者メニュー</h3>
-              <div className={styles.ownerButtons}>
-                <Link to={`/items/${item.id}/edit`}>
-                  <button className={styles.editButton}>編集する</button>
-                </Link>
-                <button onClick={handleDelete} disabled={isProcessing} className={styles.deleteButton}>削除する</button>
-              </div>
+              <Link to={`/items/${item.id}/edit`}>
+                <button className={styles.editButton}>商品を編集</button>
+              </Link>
+              <button onClick={handleDelete} disabled={isProcessing} className={styles.deleteButton}>この商品を削除</button>
             </div>
           )}
         </div>
       </div>
-      <Link to="/" className={styles.backLink}>商品一覧へ戻る</Link>
+      {/* コメントセクションは別コンポーネントなので、ここでは呼び出すだけ */}
     </div>
   );
 };

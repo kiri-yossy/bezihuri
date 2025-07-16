@@ -24,11 +24,8 @@ const PrivacyPolicyPage = () => <div style={{padding: '20px'}}><h2>プライバ�
 
 function AppContent() {
   const [token, setToken] = useState<string | null>(null);
-  
-  // ★★★ この行の直前にコメントを追加 ★★★
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_loggedInUserId, setLoggedInUserId] = useState<number | null>(null);
-  
   const navigate = useNavigate();
   const { showToast } = useToast();
 
@@ -60,9 +57,16 @@ function AppContent() {
   };
 
   const handleRegisterSuccess = () => {
-    navigate('/check-email');
+    // 環境変数のスイッチで遷移先を切り替えます
+    if (import.meta.env.VITE_EMAIL_VERIFICATION_ENABLED === 'true') {
+      navigate('/check-email');
+    } else {
+      showToast('ユーザー登録が成功しました！ログインしてください。', 'success');
+      navigate('/login');
+    }
   };
 
+  // ★★★ async キーワードをここに戻します ★★★
   const handleItemCreated = async () => {
     showToast('商品が正常に出品されました！', 'success');
     navigate('/');

@@ -31,16 +31,19 @@ export const register = async (req: Request, res: Response, next: NextFunction):
         user.username = username;
         user.email = email;
         user.password = hashedPassword;
-        user.isVerified = false;
         user.verificationToken = verificationToken;
+        // isVerified は User エンティティのデフォルト値で設定されます
 
         const newUser = await userRepository.save(user);
 
-        try {
-            await sendVerificationEmail(newUser.email, verificationToken);
-            console.log(`Verification email sent to ${newUser.email}`);
-        } catch (emailError) {
-            console.error("Failed to send verification email:", emailError);
+        // メール認証が有効な場合のみメールを送信します
+        if (process.env.EMAIL_VERIFICATION_ENABLED === 'true') {
+            try {
+                await sendVerificationEmail(newUser.email, verificationToken);
+                console.log(`Verification email sent to ${newUser.email}`);
+            } catch (emailError) {
+                console.error("Failed to send verification email:", emailError);
+            }
         }
         
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -67,7 +70,8 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
             return;
         }
         
-        if (!user.isVerified) {
+        // メール認証が有効な場合のみ、認証済みかチェックします
+        if (process.env.EMAIL_VERIFICATION_ENABLED === 'true' && !user.isVerified) {
             res.status(403).json({ message: 'メールアドレスが認証されていません。メールボックスを確認してください。' });
             return;
         }
@@ -89,31 +93,23 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
     }
 };
 
-// ★★★ メールアドレス認証を完了させる関数を追加 ★★★
 export const verifyEmail = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const { token } = req.body;
-
         if (!token) {
             res.status(400).json({ message: "認証トークンが必要です。" });
             return;
         }
-
         const userRepository = AppDataSource.getRepository(User);
         const user = await userRepository.findOneBy({ verificationToken: token });
-
         if (!user) {
             res.status(404).json({ message: "無効な認証トークンです。ユーザーが見つかりません。" });
             return;
         }
-
-        // 認証フラグを立て、トークンを無効化（削除）する
         user.isVerified = true;
-        user.verificationToken = null; // 一度使ったトークンは無効にする
+        user.verificationToken = null;
         await userRepository.save(user);
-
         res.json({ message: "メールアドレスの認証が完了しました！ログインしてください。" });
-
     } catch (err) {
         console.error('Error in verifyEmail:', err);
         next(err);

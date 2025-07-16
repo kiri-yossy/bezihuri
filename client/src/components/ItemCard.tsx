@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import styles from './ItemCard.module.css';
 import { LikeButton } from './LikeButton';
 
-// APIからの新しいプロパティに対応
+// 型定義
 interface Item {
   id: number;
   title: string;
@@ -20,27 +20,29 @@ interface ItemCardProps {
 export const ItemCard: React.FC<ItemCardProps> = ({ item }) => {
   return (
     <div className={styles.card}>
-      <Link to={`/items/${item.id}`}>
+      <Link to={`/items/${item.id}`} className={styles.linkWrapper}>
         <div className={styles.imageContainer}>
           {item.imageUrls && item.imageUrls.length > 0 ? (
             <img src={item.imageUrls[0]} alt={item.title} className={styles.image} />
           ) : (
             <div className={styles.noImage}>画像なし</div>
           )}
+          {/* ★★★ 価格を画像の上にオーバーレイ表示 ★★★ */}
+          <div className={styles.priceOverlay}>
+            <span>¥{item.price.toLocaleString()}</span>
+          </div>
+        </div>
+        <div className={styles.info}>
+          <p className={styles.title}>{item.title}</p>
         </div>
       </Link>
-      <div className={styles.info}>
-        <h3 className={styles.title}>
-          <Link to={`/items/${item.id}`}>{item.title}</Link>
-        </h3>
-        <div className={styles.bottomRow}>
-          <p className={styles.price}>{item.price.toLocaleString()}円</p>
-          <LikeButton 
-            itemId={item.id}
-            initialLiked={item.isLikedByCurrentUser}
-            initialLikeCount={item.likeCount}
-          />
-        </div>
+      {/* いいねボタンはカードの下部、リンクの外に配置 */}
+      <div className={styles.likeButtonWrapper}>
+        <LikeButton 
+          itemId={item.id}
+          initialLiked={item.isLikedByCurrentUser}
+          initialLikeCount={item.likeCount}
+        />
       </div>
     </div>
   );
