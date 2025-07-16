@@ -106,7 +106,10 @@ export const MyPage = () => {
   };
 
   const handleCompleteTransaction = async (reservationId: number | undefined) => {
-    if (!reservationId) return;
+    if (!reservationId) {
+        showToast('エラー: 取引情報が見つかりません。', 'error');
+        return;
+    }
     if (!window.confirm('この取引を「受け渡し完了」にしますか？完了後は評価が可能になります。')) return;
     try {
         await fetchApi(`/api/reservations/${reservationId}/complete`, { method: 'PUT' });
@@ -163,7 +166,7 @@ export const MyPage = () => {
                             <div key={item.id} className={styles.transactionItem}>
                                 <ItemCard item={item} />
                                 <div className={styles.transactionActions}>
-                                    {item.reservationStatus === 'reserved' && (<Button onClick={() => navigate(`/chat/${item.conversationId}`)}>出品者と連絡</Button>)}
+                                    {item.reservationStatus === 'reserved' && item.conversationId && (<Button onClick={() => navigate(`/chat/${item.conversationId}`)}>出品者と連絡</Button>)}
                                     {item.reservationStatus === 'completed' && (<Link to={`/reservations/${item.reservationId}/review`}><Button className={styles.reviewButton}>出品者を評価する</Button></Link>)}
                                 </div>
                             </div>
@@ -193,13 +196,9 @@ export const MyPage = () => {
             {!loading && activeTab === 'likes' && (
                 items.liked.length > 0 ? (
                     <div className={styles.itemList}>
-                        {items.liked.map(item => (
-                        <ItemCard key={item.id} item={item} />
-                        ))}
+                        {items.liked.map(item => (<ItemCard key={item.id} item={item} />))}
                     </div>
-                ) : (
-                    <p>まだ「いいね！」した商品はありません。</p>
-                )
+                ) : (<p>まだ「いいね！」した商品はありません。</p>)
             )}
         </div>
       </div>

@@ -18,12 +18,9 @@ import { VerifyEmailPage } from './pages/VerifyEmailPage';
 import { CheckEmailPage } from './pages/CheckEmailPage';
 import { ReviewPage } from './pages/ReviewPage';
 import { UserProfilePage } from './pages/UserProfilePage';
-import { TermsPage } from './pages/TermsPage'; // ★ 新しいページをインポート
-import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage'; // ★ 新しいページをインポート
 
-// ★★★ ファイル内で定義していた仮のページは削除します ★★★
-// const TermsPage = () => ...
-// const PrivacyPolicyPage = () => ...
+const TermsPage = () => <div style={{padding: '20px'}}><h2>利用規約</h2><p>ここに利用規約の内容が入ります。</p></div>;
+const PrivacyPolicyPage = () => <div style={{padding: '20px'}}><h2>プライバシーポリシー</h2><p>ここにプライバシーポリシーの内容が入ります。</p></div>;
 
 function AppContent() {
   const [token, setToken] = useState<string | null>(null);

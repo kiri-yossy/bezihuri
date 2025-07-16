@@ -67,7 +67,7 @@ export const getMyItems = async (req: AuthRequest, res: Response, next: NextFunc
             if (item.status === 'reserved' || item.status === 'sold_out') {
                 const reservation = await reservationRepo.findOne({
                     where: { item: { id: item.id } },
-                    select: ['id']
+                    select: ['id'] // 予約IDだけ取得
                 });
                 reservationId = reservation?.id;
             }
@@ -79,7 +79,7 @@ export const getMyItems = async (req: AuthRequest, res: Response, next: NextFunc
                 ...restOfItem, 
                 likeCount, 
                 isLikedByCurrentUser,
-                reservationId // ★ 予約IDを追加
+                reservationId // ★ 予約IDをレスポンスに追加
             };
         }));
 
@@ -90,7 +90,7 @@ export const getMyItems = async (req: AuthRequest, res: Response, next: NextFunc
     }
 };
 
-// ログイン中のユーザーが予約した商品一覧を取得
+// ★★★ ログイン中のユーザーが予約した商品一覧を取得 (修正版) ★★★
 export const getMyReservations = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
         const currentUser = req.user as User;
@@ -101,15 +101,17 @@ export const getMyReservations = async (req: AuthRequest, res: Response, next: N
         const reservationRepository = AppDataSource.getRepository(Reservation);
         const reservations = await reservationRepository.find({
             where: { buyer: { id: currentUser.id } },
-            relations: ["item", "item.seller", "item.likes", "item.likes.user", "conversation"],
+            relations: ["item", "item.seller", "item.likes", "item.likes.user", "conversation"], // ★ conversationも取得
             order: { createdAt: "DESC" },
         });
 
+        // 予約履歴から商品情報とチャット情報を抽出して返す
         const reservedItems = reservations.map(reservation => {
             if (reservation.item) {
                 const item = reservation.item;
                 const likeCount = item.likes.length;
                 const isLikedByCurrentUser = item.likes.some(like => like.user.id === currentUser.id);
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 const { likes, ...restOfItem } = item;
                 return {
                     ...restOfItem,
@@ -117,7 +119,7 @@ export const getMyReservations = async (req: AuthRequest, res: Response, next: N
                     isLikedByCurrentUser,
                     reservationId: reservation.id,
                     reservationStatus: reservation.status,
-                    conversationId: reservation.conversation?.id,
+                    conversationId: reservation.conversation?.id, // ★ チャットルームIDを追加
                 };
             }
             return null;
@@ -125,6 +127,7 @@ export const getMyReservations = async (req: AuthRequest, res: Response, next: N
 
         res.json(reservedItems);
     } catch (err) {
+        console.error('Error in getMyReservations:', err);
         next(err);
     }
 };

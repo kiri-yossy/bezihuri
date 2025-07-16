@@ -229,3 +229,63 @@
         white-space: nowrap; /* タブの文字が改行されないように */
     }
 }
+
+/* /client/src/pages/MyPage.module.css の一番下に追記 */
+
+.reviewItem {
+  border-bottom: 1px solid #f0f0f0;
+  padding: 20px 10px;
+}
+.reviewItem:last-child {
+  border-bottom: none;
+}
+
+.reviewHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.ratingBadge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-weight: bold;
+    font-size: 0.9em;
+    color: white;
+}
+
+.ratingBadge.good {
+    background-color: #2ecc71; /* 良い評価の色 */
+}
+.ratingBadge.normal {
+    background-color: #f1c40f; /* 普通の評価の色 */
+}
+.ratingBadge.bad {
+    background-color: #e74c3c; /* 悪いの評価の色 */
+}
+
+.reviewUser {
+    font-size: 0.9em;
+    color: #555;
+}
+
+.reviewComment {
+  margin: 0 0 12px 0;
+  line-height: 1.6;
+}
+
+.reviewDate {
+  margin: 0;
+  font-size: 0.8em;
+  color: #888;
+  text-align: right;
+}
+
+.itemsHeader {
+  font-size: 1.4em;
+  font-weight: 700;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 12px;
+  margin: 40px 0 24px 0;
+}

@@ -5,6 +5,7 @@ import { Button } from '../components/Button';
 import { LikeButton } from '../components/LikeButton';
 import { useToast } from '../context/ToastContext';
 import { fetchApi } from '../apiClient';
+import { CommentSection } from '../components/CommentSection';
 
 // 型定義
 interface Item {
@@ -29,6 +30,7 @@ export const ItemDetailPage = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [mainImage, setMainImage] = useState<string>(''); // ★ 表示するメイン画像を管理
 
   const loggedInUserId = Number(localStorage.getItem('userId'));
 
@@ -37,6 +39,10 @@ export const ItemDetailPage = () => {
     try {
       const data = await fetchApi(`/api/items/${itemId}`);
       setItem(data);
+      // ★ 最初に表示するメイン画像をセット
+      if (data.imageUrls && data.imageUrls.length > 0) {
+        setMainImage(data.imageUrls[0]);
+      }
     } catch (error) {
       const msg = error instanceof Error ? error.message : '予期せぬエラーが発生しました';
       setErrorMessage(msg);
@@ -53,7 +59,7 @@ export const ItemDetailPage = () => {
 
   const handleDelete = async () => {
     if (!window.confirm('本当にこの商品を削除しますか？')) return;
-    setIsProcessing(true); // ★ ここで isProcessing を true に設定
+    setIsProcessing(true);
     try {
       await fetchApi(`/api/items/${itemId}`, { method: 'DELETE' });
       showToast('商品を削除しました。', 'success');
@@ -61,7 +67,7 @@ export const ItemDetailPage = () => {
     } catch (error) {
       showToast(`エラー: ${(error as Error).message}`, 'error');
     } finally {
-      setIsProcessing(false); // ★ ここで isProcessing を false に戻す
+      setIsProcessing(false);
     }
   };
   
@@ -75,10 +81,27 @@ export const ItemDetailPage = () => {
     <div className={styles.pageContainer}>
       <div className={styles.itemContainer}>
         <div className={styles.imageSection}>
-          {item.imageUrls && item.imageUrls.length > 0 ? (
-            <img src={item.imageUrls[0]} alt={item.title} className={styles.mainImage} />
-          ) : (
-            <div className={styles.noImagePlaceholder}>画像なし</div>
+          {/* ★★★ メイン画像表示エリア ★★★ */}
+          <div className={styles.mainImageContainer}>
+            {mainImage ? (
+              <img src={mainImage} alt={item.title} className={styles.mainImage} />
+            ) : (
+              <div className={styles.noImagePlaceholder}>画像なし</div>
+            )}
+          </div>
+          {/* ★★★ サムネイル画像一覧 ★★★ */}
+          {item.imageUrls && item.imageUrls.length > 1 && (
+            <div className={styles.thumbnailContainer}>
+              {item.imageUrls.map((url, index) => (
+                <img
+                  key={index}
+                  src={url}
+                  alt={`商品画像 ${index + 1}`}
+                  className={`${styles.thumbnailImage} ${url === mainImage ? styles.activeThumbnail : ''}`}
+                  onClick={() => setMainImage(url)} // ★ クリックでメイン画像を切り替え
+                />
+              ))}
+            </div>
           )}
         </div>
         <div className={styles.infoSection}>
@@ -123,7 +146,10 @@ export const ItemDetailPage = () => {
           )}
         </div>
       </div>
-      {/* コメントセクションは別コンポーネントなので、ここでは呼び出すだけ */}
+      <div className={styles.commentSectionWrapper}>
+        <CommentSection itemId={item.id} />
+      </div>
+      <Link to="/" className={styles.backLink}>商品一覧へ戻る</Link>
     </div>
   );
 };

@@ -6,7 +6,7 @@
 
 .itemContainer {
   display: grid;
-  grid-template-columns: repeat(2, 1fr); /* 2カラムレイアウト */
+  grid-template-columns: repeat(2, 1fr);
   gap: 40px;
   background-color: #fff;
   padding: 40px;
@@ -18,10 +18,16 @@
   width: 100%;
 }
 
+.mainImageContainer {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    margin-bottom: 10px;
+}
+
 .mainImage, .noImagePlaceholder {
   width: 100%;
-  height: auto;
-  aspect-ratio: 1 / 1;
+  height: 100%;
   object-fit: cover;
   border-radius: 12px;
 }
@@ -32,7 +38,34 @@
   align-items: center;
   justify-content: center;
   color: #aaa;
+  border: 1px solid #eee;
 }
+
+/* ★★★ サムネイル用のスタイル ★★★ */
+.thumbnailContainer {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.thumbnailImage {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color 0.2s;
+}
+
+.thumbnailImage:hover {
+    border-color: #ccc;
+}
+
+.activeThumbnail {
+    border-color: #2ecc71;
+}
+/* ★★★★★★★★★★★★★★★★★★★ */
 
 .infoSection {
   display: flex;
@@ -141,10 +174,30 @@
     color: #e74c3c;
 }
 
-/* レスポンシブ対応 */
+.commentSectionWrapper {
+  margin-top: 40px;
+  background-color: #fff;
+  padding: 30px;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.backLink {
+  display: block;
+  text-align: center;
+  margin-top: 30px;
+  color: #007bff;
+}
+
+.centeredMessage {
+  text-align: center;
+  padding: 50px 0;
+  color: #777;
+}
+
 @media screen and (max-width: 768px) {
   .itemContainer {
-    grid-template-columns: 1fr; /* 1カラムレイアウトに */
+    grid-template-columns: 1fr;
     padding: 20px;
   }
 }
