@@ -16,6 +16,7 @@ export const getMyProfile = async (req: AuthRequest, res: Response, next: NextFu
             res.status(401).json({ message: "認証されていません。" });
             return;
         }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { password, ...userWithoutPassword } = currentUser;
         res.json(userWithoutPassword);
     } catch (err) {
@@ -37,6 +38,7 @@ export const updateMyProfile = async (req: AuthRequest, res: Response, next: Nex
         if (bio !== undefined) currentUser.bio = bio;
         
         const updatedUser = await userRepository.save(currentUser);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { password, ...userWithoutPassword } = updatedUser;
         res.json(userWithoutPassword);
     } catch (err) {
