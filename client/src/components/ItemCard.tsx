@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import styles from './ItemCard.module.css';
 import { LikeButton } from './LikeButton';
 
-// 型定義
 interface Item {
   id: number;
   title: string;
@@ -25,9 +24,8 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item }) => {
           {item.imageUrls && item.imageUrls.length > 0 ? (
             <img src={item.imageUrls[0]} alt={item.title} className={styles.image} />
           ) : (
-            <div className={styles.noImage}>画像なし</div>
+            <div className={styles.noImage}>🥕</div>
           )}
-          {/* ★★★ 価格を画像の上にオーバーレイ表示 ★★★ */}
           <div className={styles.priceOverlay}>
             <span>¥{item.price.toLocaleString()}</span>
           </div>
@@ -36,7 +34,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item }) => {
           <p className={styles.title}>{item.title}</p>
         </div>
       </Link>
-      {/* いいねボタンはカードの下部、リンクの外に配置 */}
       <div className={styles.likeButtonWrapper}>
         <LikeButton 
           itemId={item.id}

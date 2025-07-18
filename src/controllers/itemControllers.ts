@@ -2,58 +2,51 @@ import { Request, Response, NextFunction } from 'express';
 import { AppDataSource } from '../config/ormconfig';
 import { Item, ItemStatus } from '../entity/Item';
 import { User } from '../entity/User';
+import { Reservation } from '../entity/Reservation';
+import { Like } from '../entity/Like';
+import { Follow } from '../entity/Follow';
+import { Review } from '../entity/Review';
+import { Conversation } from '../entity/Conversation';
 import { AuthRequest } from '../middleware/auth';
-import { uploadToS3 } from '../utils/s3';
 import { ILike } from "typeorm";
-import * as wanakana from 'wanakana'; // wanakanaをインポート
+import * as wanakana from 'wanakana';
+import { uploadToS3 } from '../utils/s3';
 
-// 全件取得
 export const getAllItems = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
         const skip = (page - 1) * limit;
-
+        const currentUserId = req.user?.id;
         const itemRepository = AppDataSource.getRepository(Item);
-
         const [items, totalItems] = await itemRepository.findAndCount({
+            where: { status: ItemStatus.AVAILABLE },
             order: { createdAt: "DESC" },
-            relations: ["seller", "likes", "likes.user"], // ★ "likes"と"likes.user"を追加
+            relations: ["seller", "likes", "likes.user"],
             skip: skip,
             take: limit,
         });
-
-        // ログイン中のユーザーIDを取得 (トークンがあれば)
-        const currentUserId = req.user?.id;
-
-        // 各商品にいいね数と、ログインユーザーがいいね済みかどうかの情報を追加
         const itemsWithLikeData = items.map(item => {
             const likeCount = item.likes.length;
             const isLikedByCurrentUser = currentUserId 
                 ? item.likes.some(like => like.user.id === currentUserId) 
                 : false;
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { likes, ...itemWithoutLikes } = item; // レスポンスから不要なlikes配列を削除
+            const { likes, ...itemWithoutLikes } = item;
             return { ...itemWithoutLikes, likeCount, isLikedByCurrentUser };
         });
-
         const totalPages = Math.ceil(totalItems / limit);
-
         res.json({
             items: itemsWithLikeData,
             totalItems,
             totalPages,
             currentPage: page,
         });
-
     } catch (err) {
         console.error('Error in getAllItems:', err);
         next(err);
     }
 };
 
-
-// 単一取得
 export const getItemById = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
         const itemId = parseInt(req.params.id, 10);
@@ -61,36 +54,28 @@ export const getItemById = async (req: AuthRequest, res: Response, next: NextFun
             res.status(400).json({ message: "無効な商品IDです。" });
             return;
         }
-
         const itemRepository = AppDataSource.getRepository(Item);
         const item = await itemRepository.findOne({
             where: { id: itemId },
-            relations: ["seller", "likes", "likes.user"], // ★ "likes"と"likes.user"を追加
+            relations: ["seller", "likes", "likes.user"],
         });
-
         if (!item) {
             res.status(404).json({ message: "商品が見つかりません" });
             return;
         }
-        
         const currentUserId = req.user?.id;
         const likeCount = item.likes.length;
         const isLikedByCurrentUser = currentUserId 
             ? item.likes.some(like => like.user.id === currentUserId) 
             : false;
-            
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { likes, ...itemWithoutLikes } = item;
-
         res.json({ ...itemWithoutLikes, likeCount, isLikedByCurrentUser });
-
     } catch (err) {
         console.error('Error in getItemById:', err);
         next(err);
     }
 };
 
-// 新規出品
 export const createItem = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
         const { title, description, price, status, category } = req.body;
@@ -134,7 +119,6 @@ export const createItem = async (req: AuthRequest, res: Response, next: NextFunc
     }
 };
 
-// 商品情報更新
 export const updateItem = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
         const itemId = parseInt(req.params.id, 10);
@@ -188,7 +172,6 @@ export const updateItem = async (req: AuthRequest, res: Response, next: NextFunc
     }
 };
 
-// 商品削除
 export const deleteItem = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
         const itemId = parseInt(req.params.id, 10);
@@ -222,66 +205,94 @@ export const deleteItem = async (req: AuthRequest, res: Response, next: NextFunc
     }
 };
 
-// ★★★ 商品検索 (ひらがな・カタカナ対応版) ★★★
-export const searchItems = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const searchItems = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
         const query = req.query.q as string;
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 9;
+        const skip = (page - 1) * limit;
+        const currentUserId = req.user?.id;
 
         if (!query || query.trim() === '') {
-            res.json([]);
+            res.json({ items: [], totalItems: 0, totalPages: 0, currentPage: 1 });
             return;
         }
 
-        // 検索キーワードをひらがなに変換
         const normalizedQuery = wanakana.toHiragana(query);
-
         const itemRepository = AppDataSource.getRepository(Item);
 
-        // searchTextカラムを検索
-        const items = await itemRepository.find({
+        const [items, totalItems] = await itemRepository.findAndCount({
             where: { 
-                searchText: ILike(`%${normalizedQuery}%`)
+                searchText: ILike(`%${normalizedQuery}%`),
+                status: ItemStatus.AVAILABLE
             },
-            relations: ["seller"],
+            relations: ["seller", "likes", "likes.user"],
             order: { createdAt: "DESC" },
+            skip: skip,
+            take: limit,
         });
 
-        res.json(items);
+        const itemsWithLikeData = items.map(item => {
+            const likeCount = item.likes.length;
+            const isLikedByCurrentUser = currentUserId 
+                ? item.likes.some(like => like.user.id === currentUserId) 
+                : false;
+            const { likes, ...restOfItem } = item;
+            return { ...restOfItem, likeCount, isLikedByCurrentUser };
+        });
 
+        const totalPages = Math.ceil(totalItems / limit);
+
+        res.json({
+            items: itemsWithLikeData,
+            totalItems,
+            totalPages,
+            currentPage: page,
+        });
     } catch (err) {
         console.error('Error in searchItems:', err);
         next(err);
     }
 };
 
-// ★★★ カテゴリー別商品一覧取得API ★★★
-export const getItemsByCategory = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+// ★★★ getItemsByCategory 関数を修正 ★★★
+export const getItemsByCategory = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const category = req.params.categoryName; // URLからカテゴリー名を取得
-        
-        // ページネーションも追加
+        const category = req.params.categoryName;
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
         const skip = (page - 1) * limit;
+        const currentUserId = req.user?.id; // ★ req.user を使えるように
 
         const itemRepository = AppDataSource.getRepository(Item);
         const [items, totalItems] = await itemRepository.findAndCount({
-            where: { category: category },
+            where: { 
+                category: category,
+                status: ItemStatus.AVAILABLE
+            },
             order: { createdAt: "DESC" },
-            relations: ["seller"],
+            relations: ["seller", "likes", "likes.user"], // ★ いいね情報も取得
             skip: skip,
             take: limit,
+        });
+
+        const itemsWithLikeData = items.map(item => {
+            const likeCount = item.likes.length;
+            const isLikedByCurrentUser = currentUserId 
+                ? item.likes.some(like => like.user.id === currentUserId) 
+                : false;
+            const { likes, ...restOfItem } = item;
+            return { ...restOfItem, likeCount, isLikedByCurrentUser };
         });
 
         const totalPages = Math.ceil(totalItems / limit);
 
         res.json({
-            items,
+            items: itemsWithLikeData,
             totalItems,
             totalPages,
             currentPage: page,
         });
-
     } catch (err) {
         console.error('Error in getItemsByCategory:', err);
         next(err);
