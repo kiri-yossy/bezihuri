@@ -8,24 +8,39 @@ import { Follow } from '../entity/Follow';
 import { Review } from '../entity/Review';
 import { Conversation } from '../entity/Conversation';
 import { AuthRequest } from '../middleware/auth';
-import { ILike } from "typeorm";
+import { ILike, In } from "typeorm";
 import * as wanakana from 'wanakana';
 import { uploadToS3 } from '../utils/s3';
 
+// ★★★ getAllItems 関数を修正 ★★★
 export const getAllItems = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
+        const filter = req.query.filter as string; // ★ フィルター用のクエリパラメータを取得
         const skip = (page - 1) * limit;
         const currentUserId = req.user?.id;
+
         const itemRepository = AppDataSource.getRepository(Item);
+
+        // ★ フィルターに応じてwhere句を動的に構築
+        const whereCondition: any = {};
+        if (filter === 'available') {
+            whereCondition.status = ItemStatus.AVAILABLE;
+        } else if (filter === 'reserved') {
+            whereCondition.status = In([ItemStatus.RESERVED, ItemStatus.PENDING_RESERVATION]);
+        } else { // 'all' または指定なしの場合
+            whereCondition.status = In([ItemStatus.AVAILABLE, ItemStatus.RESERVED, ItemStatus.PENDING_RESERVATION]);
+        }
+
         const [items, totalItems] = await itemRepository.findAndCount({
-            where: { status: ItemStatus.AVAILABLE },
+            where: whereCondition,
             order: { createdAt: "DESC" },
             relations: ["seller", "likes", "likes.user"],
             skip: skip,
             take: limit,
         });
+
         const itemsWithLikeData = items.map(item => {
             const likeCount = item.likes.length;
             const isLikedByCurrentUser = currentUserId 
@@ -34,13 +49,16 @@ export const getAllItems = async (req: AuthRequest, res: Response, next: NextFun
             const { likes, ...itemWithoutLikes } = item;
             return { ...itemWithoutLikes, likeCount, isLikedByCurrentUser };
         });
+
         const totalPages = Math.ceil(totalItems / limit);
+
         res.json({
             items: itemsWithLikeData,
             totalItems,
             totalPages,
             currentPage: page,
         });
+
     } catch (err) {
         console.error('Error in getAllItems:', err);
         next(err);
