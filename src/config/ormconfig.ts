@@ -13,15 +13,18 @@ export const AppDataSource = new DataSource({
     synchronize: true,
     logging: true,
     
-    // ★★★ この部分を修正 ★★★
-    // 本番環境ではコンパイル後のJavaScriptファイルを、
-    // 開発環境ではTypeScriptファイルを読み込むように設定
     entities: [
         process.env.NODE_ENV === 'production'
             ? 'dist/entity/**/*.js'
             : 'src/entity/**/*.ts'
     ],
-    // ★★★★★★★★★★★★★★★★
+
+    // ★★★ このSSL設定を追加 ★★★
+    // 本番環境（NODE_ENVが'production'）の場合のみ、SSL接続を有効にする
+    ssl: process.env.NODE_ENV === 'production' 
+        ? { rejectUnauthorized: false } 
+        : false,
+    // ★★★★★★★★★★★★★★★★★★
 
     migrations: [],
     subscribers: [],
