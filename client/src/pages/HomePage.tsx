@@ -29,8 +29,8 @@ interface ItemsApiResponse {
     currentPage: number;
 }
 
-const categories = ["野菜", "果物", "加工品", "その他"];
-type ItemStatusFilter = 'all' | 'available' | 'reserved';
+const categories = ["野菜", "果物", "その他"];
+type ItemStatusFilter = 'all' | 'available' | 'reserved' | 'sold_out';
 
 export const HomePage = () => {
   const [apiResponse, setApiResponse] = useState<ItemsApiResponse | null>(null);
@@ -39,7 +39,7 @@ export const HomePage = () => {
   const [activeTab, setActiveTab] = useState<'new' | 'category'>('new');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemStatusFilter, setItemStatusFilter] = useState<ItemStatusFilter>('all');
+  const [itemStatusFilter, setItemStatusFilter] = useState<ItemStatusFilter>('available');
   const location = useLocation();
 
   useEffect(() => {

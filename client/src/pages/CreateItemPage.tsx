@@ -9,7 +9,7 @@ interface CreateItemPageProps {
   onItemCreated: () => Promise<void>;
 }
 
-const categories = ["野菜", "果物", "加工品", "その他"];
+const categories = ["野菜", "果物", "その他"];
 
 export const CreateItemPage: React.FC<CreateItemPageProps> = ({ onItemCreated }) => {
   const [title, setTitle] = useState('');

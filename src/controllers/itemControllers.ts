@@ -17,21 +17,23 @@ export const getAllItems = async (req: AuthRequest, res: Response, next: NextFun
     try {
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
-        const filter = req.query.filter as string; // ★ フィルター用のクエリパラメータを取得
+        const filter = req.query.filter as string;
         const skip = (page - 1) * limit;
         const currentUserId = req.user?.id;
 
         const itemRepository = AppDataSource.getRepository(Item);
 
-        // ★ フィルターに応じてwhere句を動的に構築
+        // フィルターに応じてwhere句を動的に構築
         const whereCondition: any = {};
         if (filter === 'available') {
             whereCondition.status = ItemStatus.AVAILABLE;
         } else if (filter === 'reserved') {
+            // 「予約中」には承認待ちも含む
             whereCondition.status = In([ItemStatus.RESERVED, ItemStatus.PENDING_RESERVATION]);
-        } else { // 'all' または指定なしの場合
-            whereCondition.status = In([ItemStatus.AVAILABLE, ItemStatus.RESERVED, ItemStatus.PENDING_RESERVATION]);
-        }
+        } else if (filter === 'sold_out') {
+            whereCondition.status = ItemStatus.SOLD_OUT;
+        } 
+        // 'all' またはフィルター指定なしの場合は、where句にstatusを指定しない（すべて取得）
 
         const [items, totalItems] = await itemRepository.findAndCount({
             where: whereCondition,
@@ -46,6 +48,7 @@ export const getAllItems = async (req: AuthRequest, res: Response, next: NextFun
             const isLikedByCurrentUser = currentUserId 
                 ? item.likes.some(like => like.user.id === currentUserId) 
                 : false;
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { likes, ...itemWithoutLikes } = item;
             return { ...itemWithoutLikes, likeCount, isLikedByCurrentUser };
         });
