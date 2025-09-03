@@ -9,6 +9,7 @@ export const Footer = () => {
           🥕 ベジフリ
         </div>
         <div className={styles.links}>
+          <Link to="/tutorial" className={styles.link}>使い方ガイド</Link>
           <Link to="/terms" className={styles.link}>利用規約</Link>
           <Link to="/privacy" className={styles.link}>プライバシーポリシー</Link>
         </div>
