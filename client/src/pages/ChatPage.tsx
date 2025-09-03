@@ -4,7 +4,7 @@ import styles from './ChatPage.module.css';
 import { fetchApi } from '../apiClient';
 import { Button } from '../components/Button';
 import { TextArea } from '../components/TextArea';
-import { useToast } from '../context/ToastContext'; // ★ useToastをインポート
+import { useToast } from '../context/ToastContext';
 
 // 型定義
 interface Message {
@@ -26,9 +26,8 @@ export const ChatPage = () => {
   const [isSending, setIsSending] = useState(false);
   const currentUserId = Number(localStorage.getItem('userId'));
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { showToast } = useToast(); // ★ Toast表示用の関数を取得
+  const { showToast } = useToast();
 
-  // メッセージリストの最下部に自動スクロール
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -66,8 +65,6 @@ export const ChatPage = () => {
       setMessages(prevMessages => [...prevMessages, sentMessage]);
       setNewMessage('');
     } catch (err) {
-      // ★★★ ここを修正 ★★★
-      // alertの代わりに、より具体的なエラーをトーストで表示
       showToast(err instanceof Error ? err.message : 'メッセージの送信に失敗しました。', 'error');
     } finally {
       setIsSending(false);
@@ -96,7 +93,7 @@ export const ChatPage = () => {
           placeholder="メッセージを入力..."
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
-          rows={3}
+          rows={2}
           required
         />
         <Button type="submit" disabled={isSending}>

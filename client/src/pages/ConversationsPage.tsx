@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import styles from './ConversationsPage.module.css';
 import { fetchApi } from '../apiClient';
@@ -53,7 +53,6 @@ export const ConversationsPage = () => {
       <div className={styles.conversationList}>
         {conversations.length > 0 ? (
           conversations.map(conv => {
-            // 自分以外の参加者（相手）を見つける
             const otherParticipant = conv.participants.find(p => p.id !== currentUserId);
             return (
               <Link to={`/chat/${conv.id}`} key={conv.id} className={styles.conversationItem}>

@@ -21,6 +21,8 @@ import { ReviewPage } from './pages/ReviewPage';
 import { UserProfilePage } from './pages/UserProfilePage';
 import { TermsPage } from './pages/TermsPage';
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
+import { ConversationsPage } from './pages/ConversationsPage'; // ★インポート
+import { ChatPage } from './pages/ChatPage'; // ★インポート
 
 function AppContent() {
   const [token, setToken] = useState<string | null>(null);
@@ -93,6 +95,8 @@ function AppContent() {
           <Route path="/check-email" element={<CheckEmailPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
+          <Route path="/conversations" element={token ? <ConversationsPage /> : <LoginPage onLoginSuccess={handleLoginSuccess} />} />
+          <Route path="/chat/:conversationId" element={token ? <ChatPage /> : <LoginPage onLoginSuccess={handleLoginSuccess} />} />
         </Routes>
       </main>
 

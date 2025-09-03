@@ -12,36 +12,19 @@ export const Header: React.FC<HeaderProps> = ({ token, handleLogout }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ハンバーガーメニューがクリックされたときの処理
-  const handleMenuClick = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
-
-  // モバイルメニュー内のリンクがクリックされたときの処理
-  const handleMobileLinkClick = (path: string) => {
-    navigate(path);
-  };
-  
-  // モバイルメニュー内のログアウトボタンがクリックされたときの処理
-  const handleMobileLogoutClick = () => {
-    handleLogout();
-  };
-
-  // 検索フォームの送信処理
+  const handleMenuClick = () => { setIsMenuOpen(!isMenuOpen); };
+  const handleMobileLinkClick = (path: string) => { navigate(path); };
+  const handleMobileLogoutClick = () => { handleLogout(); };
   const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const searchQuery = formData.get('searchQuery') as string;
-
     if (searchQuery.trim()) {
       navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
-  // ページが遷移したら、メニューを自動的に閉じる
-  useEffect(() => {
-    setIsMenuOpen(false);
-  }, [location]);
+  useEffect(() => { setIsMenuOpen(false); }, [location]);
 
   return (
     <>
@@ -49,24 +32,17 @@ export const Header: React.FC<HeaderProps> = ({ token, handleLogout }) => {
         <div className={styles.logoContainer}>
           <Link to="/">🥕 ベジフリ</Link>
         </div>
-
         <div className={styles.searchContainer}>
           <form onSubmit={handleSearchSubmit}>
-            <input
-              name="searchQuery"
-              type="search"
-              placeholder="なにをお探しですか？"
-              className={styles.searchInput}
-            />
+            <input name="searchQuery" type="search" placeholder="なにをお探しですか？" className={styles.searchInput} />
           </form>
         </div>
-
         <nav className={styles.navContainer}>
           {token ? (
             <>
               <Link to="/create-item" className={styles.navLink}>出品</Link>
-              <Link to="/mypage" className={styles.navLink}>マイページ</Link>
               <Link to="/conversations" className={styles.navLink}>メッセージ</Link> {/* ★追加 */}
+              <Link to="/mypage" className={styles.navLink}>マイページ</Link>
               <button onClick={handleLogout} className={styles.logoutButton}>ログアウト</button>
             </>
           ) : (
@@ -76,34 +52,23 @@ export const Header: React.FC<HeaderProps> = ({ token, handleLogout }) => {
             </>
           )}
         </nav>
-
         <button className={styles.hamburgerMenu} onClick={handleMenuClick} aria-label="メニューを開く">
           <div className={styles.hamburgerLine}></div>
           <div className={styles.hamburgerLine}></div>
           <div className={styles.hamburgerLine}></div>
         </button>
       </header>
-
-      {isMenuOpen && (
-        <div 
-          className={styles.menuOverlay} 
-          onClick={() => setIsMenuOpen(false)}
-        />
-      )}
-
       <div className={`${styles.mobileMenu} ${isMenuOpen ? styles.menuOpen : ''}`}>
         <nav className={styles.mobileNavLinks}>
           {token ? (
             <>
-              {/* ★★★ ここにonClickを追加 ★★★ */}
               <button onClick={() => handleMobileLinkClick('/create-item')} className={styles.mobileNavLink}>出品</button>
-              <button onClick={() => handleMobileLinkClick('/mypage')} className={styles.mobileNavLink}>マイページ</button>
               <button onClick={() => handleMobileLinkClick('/conversations')} className={styles.mobileNavLink}>メッセージ</button> {/* ★追加 */}
+              <button onClick={() => handleMobileLinkClick('/mypage')} className={styles.mobileNavLink}>マイページ</button>
               <button onClick={handleMobileLogoutClick} className={styles.mobileNavLink}>ログアウト</button>
             </>
           ) : (
             <>
-              {/* ★★★ ここにonClickを追加 ★★★ */}
               <button onClick={() => handleMobileLinkClick('/login')} className={styles.mobileNavLink}>ログイン</button>
               <button onClick={() => handleMobileLinkClick('/register')} className={styles.mobileNavLink}>ユーザー登録</button>
             </>
