@@ -192,7 +192,7 @@ export const updateItem = async (req: AuthRequest, res: Response, next: NextFunc
 
 export const deleteItem = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const itemId = parseInt(req.params.id, 10);
+        const itemId = parseInt(req.params.itemId, 10);
         if (isNaN(itemId)) {
             res.status(400).json({ message: "無効な商品IDです。" });
             return;
@@ -202,21 +202,36 @@ export const deleteItem = async (req: AuthRequest, res: Response, next: NextFunc
             res.status(401).json({ message: "認証されていません。" });
             return;
         }
+
         const itemRepository = AppDataSource.getRepository(Item);
         const itemToDelete = await itemRepository.findOne({
             where: { id: itemId },
             relations: ["seller"],
         });
+
         if (!itemToDelete) {
             res.status(404).json({ message: "削除対象の商品が見つかりません。" });
             return;
         }
+
+        // 所有者チェック
         if (itemToDelete.seller.id !== currentUser.id) {
             res.status(403).json({ message: "この商品を削除する権限がありません。" });
             return;
         }
+
+        // ★★★ ステータスチェックを追加 ★★★
+        // 「販売中」の商品のみ削除可能にする
+        if (itemToDelete.status !== ItemStatus.AVAILABLE) {
+            res.status(400).json({ message: "予約中、または取引が完了した商品は削除できません。" });
+            return;
+        }
+        
+        // TODO: (任意) S3上の画像も削除する処理
+
         await itemRepository.remove(itemToDelete);
         res.status(204).send();
+
     } catch (error) {
         console.error('Error in deleteItem:', error);
         next(error);
