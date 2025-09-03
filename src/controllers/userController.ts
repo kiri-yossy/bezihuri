@@ -36,7 +36,7 @@ export const updateMyProfile = async (req: AuthRequest, res: Response, next: Nex
         const userRepository = AppDataSource.getRepository(User);
         if (username !== undefined) currentUser.username = username;
         if (bio !== undefined) currentUser.bio = bio;
-        
+
         const updatedUser = await userRepository.save(currentUser);
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { password, ...userWithoutPassword } = updatedUser;
@@ -77,9 +77,9 @@ export const getMyItems = async (req: AuthRequest, res: Response, next: NextFunc
             const isLikedByCurrentUser = item.likes.some(like => like.user.id === currentUser.id);
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { likes, ...restOfItem } = item;
-            return { 
-                ...restOfItem, 
-                likeCount, 
+            return {
+                ...restOfItem,
+                likeCount,
                 isLikedByCurrentUser,
                 reservationId // ★ 予約IDをレスポンスに追加
             };
@@ -191,6 +191,7 @@ export const getUserProfile = async (req: AuthRequest, res: Response, next: Next
             });
             if (follow) isFollowing = true;
         }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { password, email, verificationToken, ...publicProfile } = user;
         res.json({
             ...publicProfile,

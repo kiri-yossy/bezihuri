@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import styles from './MyPage.module.css';
 import { ItemCard } from '../components/ItemCard';
@@ -31,7 +31,6 @@ interface ReservationRequest {
     buyer: { id: number; username: string; };
 }
 type TabType = 'listed' | 'reserved' | 'requests' | 'likes';
-type ListedItemFilter = 'all' | 'available' | 'sold';
 
 export const MyPage = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -40,7 +39,6 @@ export const MyPage = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('listed');
-  const [listedItemFilter, setListedItemFilter] = useState<ListedItemFilter>('all');
   const { showToast } = useToast();
   const navigate = useNavigate();
 
@@ -55,7 +53,9 @@ export const MyPage = () => {
         else if (tab === 'likes') apiUrl = '/api/users/me/likes';
 
         if (!apiUrl) return;
+
         const data = await fetchApi(apiUrl);
+        
         if (tab === 'requests') {
             setRequests(data);
         } else {
@@ -121,19 +121,6 @@ export const MyPage = () => {
     }
   };
 
-  const filteredListedItems = useMemo(() => {
-    if (listedItemFilter === 'all') {
-      return items.listed;
-    }
-    if (listedItemFilter === 'available') {
-      return items.listed.filter(item => item.status === 'available');
-    }
-    if (listedItemFilter === 'sold') {
-      return items.listed.filter(item => item.status === 'reserved' || item.status === 'sold_out' || item.status === 'pending_reservation');
-    }
-    return [];
-  }, [items.listed, listedItemFilter]);
-
   if (loading && !user) { return <p className={styles.centeredMessage}>情報を読み込んでいます...</p>; }
   if (error) { return <p className={styles.centeredMessage} style={{ color: 'red' }}>エラー: {error}</p>; }
 
@@ -145,6 +132,7 @@ export const MyPage = () => {
         <p className={styles.bio}>{user?.bio || '自己紹介文を登録できます。'}</p>
         <Link to="/mypage/edit" style={{ textDecoration: 'none' }}><Button>プロフィールを編集</Button></Link>
       </div>
+
       <div className={styles.contentSection}>
         <div className={styles.tabNav}>
             <button className={activeTab === 'listed' ? styles.activeTab : styles.tab} onClick={() => handleTabClick('listed')}>出品した商品</button>
@@ -152,34 +140,49 @@ export const MyPage = () => {
             <button className={activeTab === 'requests' ? styles.activeTab : styles.tab} onClick={() => handleTabClick('requests')}>届いた予約リクエスト</button>
             <button className={activeTab === 'likes' ? styles.activeTab : styles.tab} onClick={() => handleTabClick('likes')}>いいね！一覧</button>
         </div>
+
         <div className={styles.tabContent}>
             {loading && <p>読み込み中...</p>}
+            
             {!loading && activeTab === 'listed' && (
-                <div>
-                    <div className={styles.filterContainer}>
-                        <button onClick={() => setListedItemFilter('all')} className={listedItemFilter === 'all' ? styles.activeFilter : ''}>すべて</button>
-                        <button onClick={() => setListedItemFilter('available')} className={listedItemFilter === 'available' ? styles.activeFilter : ''}>販売中</button>
-                        <button onClick={() => setListedItemFilter('sold')} className={listedItemFilter === 'sold' ? styles.activeFilter : ''}>予約中・売り切れ</button>
+                items.listed.length > 0 ? (
+                    <div className={styles.itemList}>
+                        {items.listed.map(item => (
+                            <div key={item.id} className={styles.transactionItem}>
+                                <ItemCard item={item} />
+                                <div className={styles.transactionActions}>
+                                    {item.status === 'reserved' && <Button onClick={() => handleCompleteTransaction(item.reservationId)}>受け渡し完了にする</Button>}
+                                    {item.status === 'sold_out' && <Button disabled>評価待ち</Button>}
+                                </div>
+                            </div>
+                        ))}
                     </div>
-                    {filteredListedItems.length > 0 ? (
-                        <div className={styles.itemList}>{filteredListedItems.map(item => (<div key={item.id} className={styles.transactionItem}><ItemCard item={item} /><div className={styles.transactionActions}>{item.status === 'reserved' && <Button onClick={() => handleCompleteTransaction(item.reservationId)}>受け渡し完了にする</Button>}{item.status === 'sold_out' && <Button disabled>評価待ち</Button>}</div></div>))}</div>
-                    ) : (<div className={styles.emptyState}><p>該当する商品はありません。</p></div>)}
-                </div>
+                ) : (<p>まだ出品した商品はありません。</p>)
             )}
             {!loading && activeTab === 'reserved' && (
                 items.reserved.length > 0 ? (
-                    <div className={styles.itemList}>{items.reserved.map(item => (<div key={item.id} className={styles.transactionItem}><ItemCard item={item} /><div className={styles.transactionActions}>{item.reservationStatus === 'reserved' && item.conversationId && (<Button onClick={() => navigate(`/chat/${item.conversationId}`)}>出品者と連絡</Button>)}{item.reservationStatus === 'completed' && (<Link to={`/reservations/${item.reservationId}/review`}><Button className={styles.reviewButton}>出品者を評価する</Button></Link>)}</div></div>))}</div>
-                ) : (<div className={styles.emptyState}><p>まだ予約した商品はありません。</p></div>)
+                    <div className={styles.itemList}>
+                        {items.reserved.map(item => (
+                            <div key={item.id} className={styles.transactionItem}>
+                                <ItemCard item={item} />
+                                <div className={styles.transactionActions}>
+                                    {item.reservationStatus === 'reserved' && item.conversationId && (<Button onClick={() => navigate(`/chat/${item.conversationId}`)}>出品者と連絡</Button>)}
+                                    {item.reservationStatus === 'completed' && (<Link to={`/reservations/${item.reservationId}/review`}><Button className={styles.reviewButton}>出品者を評価する</Button></Link>)}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (<p>まだ予約した商品はありません。</p>)
             )}
             {!loading && activeTab === 'requests' && (
                 requests.length > 0 ? (
                     <div className={styles.requestList}>{requests.map(req => (<div key={req.id} className={styles.requestItem}><div className={styles.requestInfo}><p><strong>購入希望者:</strong> {req.buyer.username}</p><p><strong>商品:</strong> {req.item.title}</p><p><strong>リクエスト日時:</strong> {new Date(req.createdAt).toLocaleString('ja-JP')}</p></div><div className={styles.requestActions}><button onClick={() => handleReservationAction(req.id, 'approve')} className={styles.approveButton}>承認する</button><button onClick={() => handleReservationAction(req.id, 'reject')} className={styles.rejectButton}>拒否する</button></div></div>))}</div>
-                ) : (<div className={styles.emptyState}><p>現在、新しい予約リクエストはありません。</p></div>)
+                ) : (<p>現在、新しい予約リクエストはありません。</p>)
             )}
             {!loading && activeTab === 'likes' && (
                 items.liked.length > 0 ? (
                     <div className={styles.itemList}>{items.liked.map(item => (<ItemCard key={item.id} item={item} />))}</div>
-                ) : (<div className={styles.emptyState}><p>まだ「いいね！」した商品はありません。</p><Link to="/" style={{textDecoration: 'none'}}><Button>商品を探しに行く</Button></Link></div>)
+                ) : (<p>まだ「いいね！」した商品はありません。</p>)
             )}
         </div>
       </div>
