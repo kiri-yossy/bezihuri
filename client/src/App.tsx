@@ -23,6 +23,7 @@ import { TermsPage } from './pages/TermsPage';
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
 import { ConversationsPage } from './pages/ConversationsPage'; // ★インポート
 import { ChatPage } from './pages/ChatPage'; // ★インポート
+import { TutorialPage } from './pages/TutorialPage';
 
 function AppContent() {
   const [token, setToken] = useState<string | null>(null);
@@ -97,6 +98,7 @@ function AppContent() {
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/conversations" element={token ? <ConversationsPage /> : <LoginPage onLoginSuccess={handleLoginSuccess} />} />
           <Route path="/chat/:conversationId" element={token ? <ChatPage /> : <LoginPage onLoginSuccess={handleLoginSuccess} />} />
+          <Route path="/tutorial" element={<TutorialPage />} /> 
         </Routes>
       </main>
 

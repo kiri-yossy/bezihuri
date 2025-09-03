@@ -2,7 +2,7 @@
   background-color: #f8f9fa;
   border-top: 1px solid #e0e0e0;
   padding: 30px 40px;
-  margin-top: auto; /* ★スティッキーフッターの核となる部分 */
+  margin-top: auto;
   width: 100%;
   box-sizing: border-box;
 }
@@ -22,10 +22,14 @@
 
 .links {
   margin-bottom: 16px;
+  display: flex; /* ★ flexboxを適用 */
+  justify-content: center; /* ★ 中央揃え */
+  flex-wrap: wrap; /* ★ スマホで折り返す */
+  gap: 10px 30px; /* ★ 縦と横の隙間 */
 }
 
 .link {
-  margin: 0 15px;
+  margin: 0; /* ★ 個別のマージンは不要に */
   color: #555;
   text-decoration: none;
   font-size: 0.9em;
