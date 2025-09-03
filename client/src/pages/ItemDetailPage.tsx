@@ -6,6 +6,7 @@ import { LikeButton } from '../components/LikeButton';
 import { useToast } from '../context/ToastContext';
 import { fetchApi } from '../apiClient';
 import { CommentSection } from '../components/CommentSection';
+import { BackButton } from '../components/BackButton';
 
 // 型定義
 interface Item {
@@ -30,7 +31,7 @@ export const ItemDetailPage = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [mainImage, setMainImage] = useState<string>(''); // ★ 表示するメイン画像を管理
+  const [mainImage, setMainImage] = useState<string>('');
 
   const loggedInUserId = Number(localStorage.getItem('userId'));
 
@@ -39,7 +40,6 @@ export const ItemDetailPage = () => {
     try {
       const data = await fetchApi(`/api/items/${itemId}`);
       setItem(data);
-      // ★ 最初に表示するメイン画像をセット
       if (data.imageUrls && data.imageUrls.length > 0) {
         setMainImage(data.imageUrls[0]);
       }
@@ -81,15 +81,13 @@ export const ItemDetailPage = () => {
     <div className={styles.pageContainer}>
       <div className={styles.itemContainer}>
         <div className={styles.imageSection}>
-          {/* ★★★ メイン画像表示エリア ★★★ */}
           <div className={styles.mainImageContainer}>
             {mainImage ? (
               <img src={mainImage} alt={item.title} className={styles.mainImage} />
             ) : (
-              <div className={styles.noImagePlaceholder}>画像なし</div>
+              <div className={styles.noImagePlaceholder}>🥕</div>
             )}
           </div>
-          {/* ★★★ サムネイル画像一覧 ★★★ */}
           {item.imageUrls && item.imageUrls.length > 1 && (
             <div className={styles.thumbnailContainer}>
               {item.imageUrls.map((url, index) => (
@@ -98,7 +96,7 @@ export const ItemDetailPage = () => {
                   src={url}
                   alt={`商品画像 ${index + 1}`}
                   className={`${styles.thumbnailImage} ${url === mainImage ? styles.activeThumbnail : ''}`}
-                  onClick={() => setMainImage(url)} // ★ クリックでメイン画像を切り替え
+                  onClick={() => setMainImage(url)}
                 />
               ))}
             </div>
@@ -120,8 +118,10 @@ export const ItemDetailPage = () => {
             <button className={styles.commentButton}>💬 コメント</button>
           </div>
           <div className={styles.reserveButtonContainer}>
-            {item.status !== 'available' ? (
-                <Button disabled={true}>{item.status === 'reserved' ? '予約済み' : '受け渡し完了'}</Button>
+            {item.status === 'sold_out' ? (
+                <Button disabled={true}>受け渡し完了</Button>
+            ) : item.status === 'reserved' || item.status === 'pending_reservation' ? (
+                <Button disabled={true}>予約済み</Button>
             ) : isOwner ? (
                 <Button disabled={true}>自分の商品です</Button>
             ) : loggedInUserId ? (
@@ -136,12 +136,17 @@ export const ItemDetailPage = () => {
             <h3>商品の説明</h3>
             <p>{item.description}</p>
           </div>
+
+          {/* ★★★ 出品者メニューの表示ロジックを修正 ★★★ */}
           {isOwner && (
             <div className={styles.ownerMenu}>
               <Link to={`/items/${item.id}/edit`}>
                 <button className={styles.editButton}>商品を編集</button>
               </Link>
-              <button onClick={handleDelete} disabled={isProcessing} className={styles.deleteButton}>この商品を削除</button>
+              {/* 「販売中」の時だけ削除ボタンを表示 */}
+              {item.status === 'available' && (
+                <button onClick={handleDelete} disabled={isProcessing} className={styles.deleteButton}>この商品を削除</button>
+              )}
             </div>
           )}
         </div>
@@ -149,7 +154,7 @@ export const ItemDetailPage = () => {
       <div className={styles.commentSectionWrapper}>
         <CommentSection itemId={item.id} />
       </div>
-      <Link to="/" className={styles.backLink}>商品一覧へ戻る</Link>
+      <BackButton />
     </div>
   );
 };
