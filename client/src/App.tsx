@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import styles from './App.module.css';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
+import { BackButton } from './components/BackButton'; // ★ BackButton をインポート
 import { ToastProvider, useToast } from './context/ToastContext';
 import { HomePage } from './pages/HomePage';
 import { ItemDetailPage } from './pages/ItemDetailPage';
@@ -18,10 +19,8 @@ import { VerifyEmailPage } from './pages/VerifyEmailPage';
 import { CheckEmailPage } from './pages/CheckEmailPage';
 import { ReviewPage } from './pages/ReviewPage';
 import { UserProfilePage } from './pages/UserProfilePage';
-import { TermsPage } from './pages/TermsPage'; // ★ 新しいページをインポート
-import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage'; // ★ 新しいページをインポート
-
-// ★★★ ファイル内で定義していた仮のページは完全に削除します ★★★
+import { TermsPage } from './pages/TermsPage';
+import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
 
 function AppContent() {
   const [token, setToken] = useState<string | null>(null);
@@ -29,6 +28,7 @@ function AppContent() {
   const [_loggedInUserId, setLoggedInUserId] = useState<number | null>(null);
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const location = useLocation(); // ★ 現在のURL情報を取得
 
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
@@ -74,6 +74,7 @@ function AppContent() {
   return (
     <div className={styles.appContainer}>
       <Header token={token} handleLogout={handleLogout} />
+
       <main className={styles.mainContent}>
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -94,6 +95,11 @@ function AppContent() {
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
         </Routes>
       </main>
+
+      {/* ★★★ 戻るボタンをここに追加 ★★★ */}
+      {/* location.pathnameが'/'（ホームページ）でない場合にのみ表示する */}
+      {location.pathname !== '/' && <BackButton />}
+      
       <Footer />
     </div>
   );

@@ -1,0 +1,42 @@
+/* /client/src/components/BackButton.module.css (修正版) */
+
+.backButton {
+  /* ★ display: none; を削除し、常に表示されるようにします */
+  display: flex;
+  
+  position: fixed; /* 画面に固定 */
+  bottom: 20px;
+  right: 20px;
+  
+  width: 56px;
+  height: 56px;
+  border-radius: 50%; /* 円形にする */
+  
+  background-color: #2ecc71; /* 緑色 */
+  color: white;
+  
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  
+  align-items: center;
+  justify-content: center;
+  
+  cursor: pointer;
+  z-index: 1000; /* 他の要素より手前に表示 */
+  
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.backButton:hover {
+  transform: scale(1.05); /* 少し大きくする */
+  background-color: #27ae60; /* 少し濃い緑 */
+}
+
+/* ★★★ 画面幅で表示を切り替えていたメディアクエリを完全に削除します ★★★ */
+/*
+@media screen and (max-width: 768px) {
+  .backButton {
+    display: flex;
+  }
+}
+*/
