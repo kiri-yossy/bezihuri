@@ -1,5 +1,3 @@
-// /src/server.ts (エラー修正版)
-
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { AppDataSource } from './config/ormconfig';
@@ -15,51 +13,41 @@ import commentRoutes from './routes/commentRoutes';
 import followRoutes from './routes/followRoutes';
 import reviewRoutes from './routes/reviewRoutes';
 import adminRoutes from './routes/adminRoutes';
-// import { initializeEmail } from './utils/email'; // ★ 不要なので削除
+import chatRoutes from './routes/chatRoutes'; // ★ chatRoutesをインポート
 
 AppDataSource.initialize()
     .then(async () => {
         console.log("✅ Data Source has been initialized!");
         
-        // ★ initializeEmailの呼び出しは不要なので削除
-
         const app = express();
         const httpServer = createServer(app);
+        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
 
         const io = new Server(httpServer, {
-            cors: {
-                origin: process.env.FRONTEND_URL || "http://localhost:5173",
-                methods: ["GET", "POST"]
-            }
+            cors: { origin: frontendUrl, methods: ["GET", "POST"] }
         });
 
         io.on('connection', (socket) => {
             console.log(`🔌 New client connected: ${socket.id}`);
-
             socket.on('joinRoom', (conversationId) => {
                 socket.join(conversationId);
                 console.log(`Client ${socket.id} joined room ${conversationId}`);
             });
-
             socket.on('sendMessage', (data) => {
                 socket.to(data.conversationId).emit('receiveMessage', data.message);
                 console.log(`Message broadcasted in room ${data.conversationId}`);
             });
-
             socket.on('disconnect', () => {
                 console.log(`🔌 Client disconnected: ${socket.id}`);
             });
         });
 
-        const corsOptions = {
-            origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-            optionsSuccessStatus: 200
-        };
-        app.use(cors(corsOptions));
+        app.use(cors({ origin: frontendUrl }));
         app.use(express.json());
 
         app.get("/", (req, res) => { res.send("VegiFuri API is running!"); });
         
+        // APIルート設定
         app.use('/api/auth', authRoutes);
         app.use('/api/items', itemRoutes);
         app.use('/api/users', userRoutes);
@@ -69,6 +57,7 @@ AppDataSource.initialize()
         app.use('/api', followRoutes);
         app.use('/api/admin', adminRoutes);
         app.use('/api/items', commentRoutes);
+        app.use('/api/conversations', chatRoutes); // ★★★ この行を追加 ★★★
 
         app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
             console.error("🔥🔥🔥 Global Error Handler Caught:", err);
