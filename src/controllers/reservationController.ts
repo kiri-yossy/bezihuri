@@ -11,18 +11,15 @@ export const createReservationRequest = async (req: AuthRequest, res: Response, 
     try {
         const itemId = parseInt(req.params.itemId, 10);
         const currentUser = req.user as User;
-
         if (isNaN(itemId)) {
             res.status(400).json({ message: "無効な商品IDです。" });
             return;
         }
-
         const itemRepository = AppDataSource.getRepository(Item);
         const itemToReserve = await itemRepository.findOne({
             where: { id: itemId },
             relations: ["seller"],
         });
-
         if (!itemToReserve || itemToReserve.status !== ItemStatus.AVAILABLE) {
             res.status(400).json({ message: "現在予約できない商品です。" });
             return;
@@ -31,7 +28,6 @@ export const createReservationRequest = async (req: AuthRequest, res: Response, 
             res.status(400).json({ message: "自分自身の商品は予約できません。" });
             return;
         }
-
         await AppDataSource.transaction(async transactionalEntityManager => {
             itemToReserve.status = ItemStatus.PENDING_RESERVATION;
             await transactionalEntityManager.save(itemToReserve);
@@ -43,7 +39,6 @@ export const createReservationRequest = async (req: AuthRequest, res: Response, 
             newReservation.status = ReservationStatus.PENDING_APPROVAL;
             await transactionalEntityManager.save(newReservation);
         });
-        
         res.status(201).json({ message: "商品の予約リクエストを送信しました。" });
     } catch (err) { next(err); }
 };
@@ -53,39 +48,31 @@ export const approveReservation = async (req: AuthRequest, res: Response, next: 
     try {
         const reservationId = parseInt(req.params.reservationId, 10);
         const currentUser = req.user as User;
-
         const reservationRepo = AppDataSource.getRepository(Reservation);
         const reservation = await reservationRepo.findOne({
             where: { id: reservationId },
             relations: ["item", "item.seller", "buyer"],
         });
-
         if (!reservation || reservation.item.seller.id !== currentUser.id || reservation.status !== ReservationStatus.PENDING_APPROVAL) {
             res.status(403).json({ message: "この予約を承認する権限がありません。" });
             return;
         }
-
         await AppDataSource.transaction(async transactionalEntityManager => {
-            // 先にItemをロードして、ステータスを更新
             const itemRepo = transactionalEntityManager.getRepository(Item);
             const item = await itemRepo.findOneBy({ id: reservation.item.id });
             if (!item) throw new Error("Item not found in transaction");
-
             item.status = ItemStatus.RESERVED;
             await itemRepo.save(item);
             
-            // 次にReservationのステータスを更新
             reservation.status = ReservationStatus.RESERVED;
             await transactionalEntityManager.save(reservation);
 
-            // 最後にConversationを作成
             const conversationRepo = transactionalEntityManager.getRepository(Conversation);
             const newConversation = new Conversation();
             newConversation.reservation = reservation;
             newConversation.participants = [currentUser, reservation.buyer];
             await conversationRepo.save(newConversation);
         });
-
         res.json({ message: "予約を承認しました。チャットを開始できます。" });
     } catch (err) { 
         console.error('Error in approveReservation:', err);
@@ -98,33 +85,25 @@ export const rejectReservation = async (req: AuthRequest, res: Response, next: N
     try {
         const reservationId = parseInt(req.params.reservationId, 10);
         const currentUser = req.user as User;
-        
         const reservationRepo = AppDataSource.getRepository(Reservation);
         const reservation = await reservationRepo.findOne({
             where: { id: reservationId },
             relations: ["item", "item.seller"],
         });
-
-        if (!reservation) {
-            res.status(404).json({ message: "予約リクエストが見つかりません。" });
-            return;
-        }
-        if (reservation.item.seller.id !== currentUser.id) {
+        if (!reservation || reservation.item.seller.id !== currentUser.id || reservation.status !== ReservationStatus.PENDING_APPROVAL) {
             res.status(403).json({ message: "この予約を操作する権限がありません。" });
             return;
         }
-        if (reservation.status !== ReservationStatus.PENDING_APPROVAL) {
-            res.status(400).json({ message: "承認待ちの予約ではありません。" });
-            return;
-        }
-
         await AppDataSource.transaction(async transactionalEntityManager => {
+            const itemRepo = transactionalEntityManager.getRepository(Item);
+            const item = await itemRepo.findOneBy({ id: reservation.item.id });
+            if (!item) throw new Error("Item not found in transaction");
+            item.status = ItemStatus.AVAILABLE;
+            await itemRepo.save(item);
+            
             reservation.status = ReservationStatus.REJECTED;
-            reservation.item.status = ItemStatus.AVAILABLE;
-            await transactionalEntityManager.save(reservation.item);
             await transactionalEntityManager.save(reservation);
         });
-
         res.json({ message: "予約を拒否しました。" });
     } catch (err) { next(err); }
 };
@@ -134,13 +113,11 @@ export const completeReservation = async (req: AuthRequest, res: Response, next:
     try {
         const reservationId = parseInt(req.params.reservationId, 10);
         const currentUser = req.user as User;
-
         const reservationRepo = AppDataSource.getRepository(Reservation);
         const reservation = await reservationRepo.findOne({
             where: { id: reservationId },
             relations: ["item", "item.seller"],
         });
-
         if (!reservation || reservation.item.seller.id !== currentUser.id) {
             res.status(403).json({ message: "この取引を操作する権限がありません。" });
             return;
@@ -149,24 +126,43 @@ export const completeReservation = async (req: AuthRequest, res: Response, next:
             res.status(400).json({ message: `現在のステータスは'${reservation.status}'です。予約確定済みの取引ではありません。` });
             return;
         }
-
         await AppDataSource.transaction(async transactionalEntityManager => {
-            // Itemをロードしてステータスを更新
             const itemRepo = transactionalEntityManager.getRepository(Item);
             const item = await itemRepo.findOneBy({ id: reservation.item.id });
             if (!item) throw new Error("Item not found in transaction");
-            
             item.status = ItemStatus.SOLD_OUT;
             await itemRepo.save(item);
 
-            // Reservationのステータスを更新
             reservation.status = ReservationStatus.COMPLETED;
             await transactionalEntityManager.save(reservation);
         });
-
         res.json({ message: "取引を完了しました。" });
     } catch (err) { 
         console.error('Error in completeReservation:', err);
+        next(err);
+    }
+};
+
+// ★★★ 出品者に届いた予約リクエスト一覧を取得する ★★★
+export const getReservationRequests = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const currentUser = req.user as User;
+        if (!currentUser) {
+            res.status(401).json({ message: "認証されていません。" });
+            return;
+        }
+        const reservationRepository = AppDataSource.getRepository(Reservation);
+        const requests = await reservationRepository.find({
+            where: {
+                item: { seller: { id: currentUser.id } },
+                status: ReservationStatus.PENDING_APPROVAL,
+            },
+            relations: ["item", "buyer"],
+            order: { createdAt: "DESC" },
+        });
+        res.json(requests);
+    } catch (err) {
+        console.error('Error in getReservationRequests:', err);
         next(err);
     }
 };
