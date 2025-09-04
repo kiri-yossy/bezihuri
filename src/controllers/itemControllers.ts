@@ -17,7 +17,7 @@ export const getAllItems = async (req: AuthRequest, res: Response, next: NextFun
     try {
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
-        const filter = req.query.filter as string;
+        const filter = req.query.filter as string; // 'available' または 'reserved' を期待
         const skip = (page - 1) * limit;
         const currentUserId = req.user?.id;
 
@@ -25,15 +25,13 @@ export const getAllItems = async (req: AuthRequest, res: Response, next: NextFun
 
         // フィルターに応じてwhere句を動的に構築
         const whereCondition: any = {};
-        if (filter === 'available') {
-            whereCondition.status = ItemStatus.AVAILABLE;
-        } else if (filter === 'reserved') {
+        if (filter === 'reserved') {
             // 「予約中」には承認待ちも含む
             whereCondition.status = In([ItemStatus.RESERVED, ItemStatus.PENDING_RESERVATION]);
-        } else if (filter === 'sold_out') {
-            whereCondition.status = ItemStatus.SOLD_OUT;
-        } 
-        // 'all' またはフィルター指定なしの場合は、where句にstatusを指定しない（すべて取得）
+        } else { 
+            // デフォルトは「販売中」のみ
+            whereCondition.status = ItemStatus.AVAILABLE;
+        }
 
         const [items, totalItems] = await itemRepository.findAndCount({
             where: whereCondition,
@@ -254,13 +252,15 @@ export const searchItems = async (req: AuthRequest, res: Response, next: NextFun
             return;
         }
 
-        const normalizedQuery = wanakana.toHiragana(query);
+        // 検索キーワードを小文字に変換
+        const normalizedQuery = query.toLowerCase();
+
         const itemRepository = AppDataSource.getRepository(Item);
 
         const [items, totalItems] = await itemRepository.findAndCount({
             where: { 
                 searchText: ILike(`%${normalizedQuery}%`),
-                status: ItemStatus.AVAILABLE
+                status: ItemStatus.AVAILABLE // 「販売中」の商品のみを検索対象とする
             },
             relations: ["seller", "likes", "likes.user"],
             order: { createdAt: "DESC" },
@@ -273,6 +273,7 @@ export const searchItems = async (req: AuthRequest, res: Response, next: NextFun
             const isLikedByCurrentUser = currentUserId 
                 ? item.likes.some(like => like.user.id === currentUserId) 
                 : false;
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { likes, ...restOfItem } = item;
             return { ...restOfItem, likeCount, isLikedByCurrentUser };
         });
@@ -285,6 +286,7 @@ export const searchItems = async (req: AuthRequest, res: Response, next: NextFun
             totalPages,
             currentPage: page,
         });
+
     } catch (err) {
         console.error('Error in searchItems:', err);
         next(err);

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom'; // Linkを削除
 import styles from './HomePage.module.css';
 import { ItemCard } from '../components/ItemCard';
 import { fetchApi } from '../apiClient';
+// import { Button } from '../components/Button'; // Buttonを削除
 
 // 型定義
 interface Item {
@@ -30,7 +31,7 @@ interface ItemsApiResponse {
 }
 
 const categories = ["野菜", "果物", "その他"];
-type ItemStatusFilter = 'all' | 'available' | 'reserved' | 'sold_out';
+type ItemStatusFilter = 'available' | 'reserved';
 
 export const HomePage = () => {
   const [apiResponse, setApiResponse] = useState<ItemsApiResponse | null>(null);
@@ -75,7 +76,7 @@ export const HomePage = () => {
     setActiveTab(tab);
     setSelectedCategory(null);
     setCurrentPage(1);
-    setItemStatusFilter('all'); // タブ切り替え時にフィルターもリセット
+    setItemStatusFilter('available');
   };
 
   const handleCategoryClick = (category: string) => {
@@ -114,9 +115,8 @@ export const HomePage = () => {
       
       {activeTab === 'new' && (
         <div className={styles.filterContainer}>
-            <button onClick={() => handleFilterChange('all')} className={itemStatusFilter === 'all' ? styles.activeFilter : ''}>すべて</button>
             <button onClick={() => handleFilterChange('available')} className={itemStatusFilter === 'available' ? styles.activeFilter : ''}>販売中</button>
-            <button onClick={() => handleFilterChange('reserved')} className={itemStatusFilter === 'reserved' ? styles.activeFilter : ''}>予約中</button>
+            <button onClick={() => handleFilterChange('reserved')} className={itemStatusFilter === 'reserved' ? styles.activeFilter : ''}>予約済み</button>
         </div>
       )}
 

@@ -1,5 +1,3 @@
-// /src/entity/Item.ts (wanakanaを一時的に無効化するデバッグ版)
-
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -14,7 +12,7 @@ import {
 import { User } from "./User";
 import { Like } from "./Like";
 import { Comment } from "./Comment";
-// import * as wanakana from 'wanakana'; // ★ wanakanaのインポートを一時的に削除
+import { Reservation } from "./Reservation";
 
 export enum ItemStatus {
   AVAILABLE = "available",
@@ -61,16 +59,16 @@ export class Item {
 
   @OneToMany(() => Comment, (comment: Comment) => comment.item)
   comments!: Comment[];
-
+  
   @Column('text', { select: false, default: '' })
   searchText!: string;
 
-  // ★★★ この関数の中身を、wanakanaを使わないシンプルなものに一時的に変更 ★★★
+  // ★★★ この関数の中身を、wanakanaを使わないシンプルなものに修正 ★★★
   @BeforeInsert()
   @BeforeUpdate()
   setSearchText() {
-    // ひらがな変換の代わりに、単純に小文字に変換するロジックに変更
     const combinedText = `${this.title} ${this.description}`;
+    // CommonJS/ESM問題を避けるため、一旦シンプルな小文字変換に戻します
     this.searchText = combinedText.toLowerCase();
   }
 

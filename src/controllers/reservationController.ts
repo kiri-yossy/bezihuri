@@ -60,25 +60,25 @@ export const approveReservation = async (req: AuthRequest, res: Response, next: 
             relations: ["item", "item.seller", "buyer"],
         });
 
-        if (!reservation) {
-            res.status(404).json({ message: "予約リクエストが見つかりません。" });
-            return;
-        }
-        if (reservation.item.seller.id !== currentUser.id) {
-            res.status(403).json({ message: "この予約を操作する権限がありません。" });
-            return;
-        }
-        if (reservation.status !== ReservationStatus.PENDING_APPROVAL) {
-            res.status(400).json({ message: "承認待ちの予約ではありません。" });
+        if (!reservation || reservation.item.seller.id !== currentUser.id || reservation.status !== ReservationStatus.PENDING_APPROVAL) {
+            res.status(403).json({ message: "この予約を承認する権限がありません。" });
             return;
         }
 
         await AppDataSource.transaction(async transactionalEntityManager => {
+            // 先にItemをロードして、ステータスを更新
+            const itemRepo = transactionalEntityManager.getRepository(Item);
+            const item = await itemRepo.findOneBy({ id: reservation.item.id });
+            if (!item) throw new Error("Item not found in transaction");
+
+            item.status = ItemStatus.RESERVED;
+            await itemRepo.save(item);
+            
+            // 次にReservationのステータスを更新
             reservation.status = ReservationStatus.RESERVED;
-            reservation.item.status = ItemStatus.RESERVED;
-            await transactionalEntityManager.save(reservation.item);
             await transactionalEntityManager.save(reservation);
 
+            // 最後にConversationを作成
             const conversationRepo = transactionalEntityManager.getRepository(Conversation);
             const newConversation = new Conversation();
             newConversation.reservation = reservation;
@@ -141,53 +141,32 @@ export const completeReservation = async (req: AuthRequest, res: Response, next:
             relations: ["item", "item.seller"],
         });
 
-        if (!reservation) {
-            res.status(404).json({ message: "予約が見つかりません。" });
-            return;
-        }
-        if (reservation.item.seller.id !== currentUser.id) {
+        if (!reservation || reservation.item.seller.id !== currentUser.id) {
             res.status(403).json({ message: "この取引を操作する権限がありません。" });
             return;
         }
         if (reservation.status !== ReservationStatus.RESERVED) {
-            res.status(400).json({ message: "予約確定済みの取引ではありません。" });
+            res.status(400).json({ message: `現在のステータスは'${reservation.status}'です。予約確定済みの取引ではありません。` });
             return;
         }
 
         await AppDataSource.transaction(async transactionalEntityManager => {
+            // Itemをロードしてステータスを更新
+            const itemRepo = transactionalEntityManager.getRepository(Item);
+            const item = await itemRepo.findOneBy({ id: reservation.item.id });
+            if (!item) throw new Error("Item not found in transaction");
+            
+            item.status = ItemStatus.SOLD_OUT;
+            await itemRepo.save(item);
+
+            // Reservationのステータスを更新
             reservation.status = ReservationStatus.COMPLETED;
-            reservation.item.status = ItemStatus.SOLD_OUT;
-            await transactionalEntityManager.save(reservation.item);
             await transactionalEntityManager.save(reservation);
         });
 
         res.json({ message: "取引を完了しました。" });
-    } catch (err) { next(err); }
-};
-
-// 出品者に届いた予約リクエスト一覧を取得する
-export const getReservationRequests = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-    try {
-        const currentUser = req.user as User;
-
-        if (!currentUser) {
-            res.status(401).json({ message: "認証されていません。" });
-            return;
-        }
-
-        const reservationRepository = AppDataSource.getRepository(Reservation);
-        const requests = await reservationRepository.find({
-            where: {
-                item: { seller: { id: currentUser.id } },
-                status: ReservationStatus.PENDING_APPROVAL,
-            },
-            relations: ["item", "buyer"],
-            order: { createdAt: "DESC" },
-        });
-
-        res.json(requests);
-    } catch (err) {
-        console.error('Error in getReservationRequests:', err);
+    } catch (err) { 
+        console.error('Error in completeReservation:', err);
         next(err);
     }
 };
